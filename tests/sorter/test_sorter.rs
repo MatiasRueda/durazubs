@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use durazubs::model::format::ass::{parser::parser_error::ParseRes, sorter::sorter::Sorter};
+    use durazubs::model::format::ass::{
+        parser::parser_error::{ParseRes, ParserError},
+        sorter::sorter::Sorter,
+    };
 
     struct TestCase {
         name: &'static str,
@@ -94,6 +97,12 @@ mod tests {
         expected: &[],
     };
 
+    static MISSING_FIELDS_CASE: TestCase = TestCase {
+        name: "fails on corrupt dialogue format",
+        input: &["[Events]", "Dialogue: 0,0:00:01.00,TooFewFields"],
+        expected: &[],
+    };
+
     fn run_test_case(test_case: &TestCase) -> ParseRes<()> {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
@@ -122,5 +131,14 @@ mod tests {
     #[should_panic]
     fn test_fails_on_corrupt_time() {
         run_test_case(&CORRUPT_TIME_CASE).unwrap();
+    }
+
+    #[test]
+    fn test_error_on_corrupt_dialogue() {
+        let result = run_test_case(&MISSING_FIELDS_CASE);
+        match result {
+            Err(ParserError::MissingFields { found }) => assert_eq!(found, 3),
+            _ => panic!("Expected MissingFields(3), got {:?}", result),
+        }
     }
 }
