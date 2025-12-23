@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use durazubs::model::format::ass::{cleaner::cleaner::Cleaner, parser::parser_error::ParseRes};
+    use durazubs::model::format::ass::{
+        cleaner::cleaner::Cleaner,
+        parser::parser_error::{ParseRes, ParserError},
+    };
 
     struct TestCase {
         name: &'static str,
@@ -99,6 +102,12 @@ mod tests {
         expected: &[],
     };
 
+    static MISSING_FIELDS_CASE: TestCase = TestCase {
+        name: "fails when line has missing fields",
+        input: &["Dialogue: 0,0:00:01.00,SmallFieldCount"],
+        expected: &[],
+    };
+
     static CORRUPT_LINE_CASE: TestCase = TestCase {
         name: "should fail on corrupt ass line",
         input: &["Dialogue: invalid,data,without,proper,format"],
@@ -148,5 +157,14 @@ mod tests {
     #[should_panic]
     fn test_fails_on_corrupt_data() {
         run_test_case(&CORRUPT_LINE_CASE).unwrap();
+    }
+
+    #[test]
+    fn test_error_missing_fields() {
+        let result = run_test_case(&MISSING_FIELDS_CASE);
+        match result {
+            Err(ParserError::MissingFields { found }) => assert_eq!(found, 3),
+            _ => panic!("Expected MissingFields(3), got {:?}", result),
+        }
     }
 }
