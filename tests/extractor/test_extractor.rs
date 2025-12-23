@@ -61,12 +61,10 @@ mod tests {
     fn run_test_case(test_case: &TestCase) {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
-
         let mut extractor = SceneExtractor::new();
         let result = extractor
             .run(&input)
             .unwrap_or_else(|e| panic!("Case '{}': unexpected error {:?}", test_case.name, e));
-
         assert_eq!(result, expected, "Failed at case: {}", test_case.name);
     }
 

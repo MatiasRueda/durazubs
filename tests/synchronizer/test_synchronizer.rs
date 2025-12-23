@@ -113,12 +113,10 @@ mod tests {
         let input_a: Vec<String> = test_case.input_a.iter().map(|s| s.to_string()).collect();
         let input_b: Vec<String> = test_case.input_b.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
-
         let mut synchronizer = Synchronizer::new();
         let result = synchronizer
             .run(&input_a, &input_b)
             .unwrap_or_else(|e| panic!("Case '{}': unexpected error {:?}", test_case.name, e));
-
         assert_eq!(result, expected, "Failed at case: {}", test_case.name);
     }
 

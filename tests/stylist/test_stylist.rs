@@ -179,11 +179,9 @@ mod tests {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
         let stylist = Stylist::new(style_type);
-
         let result = stylist
             .run(&input)
             .unwrap_or_else(|e| panic!("Case '{}': unexpected error {:?}", test_case.name, e));
-
         assert_eq!(result, expected, "Failed at case: {}", test_case.name);
     }
 
