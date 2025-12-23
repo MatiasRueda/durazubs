@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use durazubs::model::format::ass::synchronizer::synchronizer::Synchronizer;
+    use durazubs::model::format::ass::{
+        parser::parser_error::ParseRes, synchronizer::synchronizer::Synchronizer,
+    };
 
     struct TestCase {
         name: &'static str,
@@ -109,24 +111,36 @@ mod tests {
         ],
     };
 
-    fn run_test_case(test_case: &TestCase) {
+    static MISSING_EVENTS_CASE: TestCase = TestCase {
+        name: "fails when events section is missing",
+        input_a: &["[Script Info]"],
+        input_b: &["[Script Info]"],
+        expected: &[],
+    };
+
+    fn run_test_case(test_case: &TestCase) -> ParseRes<()> {
         let input_a: Vec<String> = test_case.input_a.iter().map(|s| s.to_string()).collect();
         let input_b: Vec<String> = test_case.input_b.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
         let mut synchronizer = Synchronizer::new();
-        let result = synchronizer
-            .run(&input_a, &input_b)
-            .unwrap_or_else(|e| panic!("Case '{}': unexpected error {:?}", test_case.name, e));
+        let result = synchronizer.run(&input_a, &input_b)?;
         assert_eq!(result, expected, "Failed at case: {}", test_case.name);
+        Ok(())
     }
 
     #[test]
-    fn test_basic_synchronization() {
-        run_test_case(&BASIC_SYNC_CASE);
+    fn test_basic_synchronization() -> ParseRes<()> {
+        run_test_case(&BASIC_SYNC_CASE)
     }
 
     #[test]
-    fn test_sync_when_b_starts_later() {
-        run_test_case(&START_LATER_CASE);
+    fn test_sync_when_b_starts_later() -> ParseRes<()> {
+        run_test_case(&START_LATER_CASE)
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fails_on_missing_events() {
+        run_test_case(&MISSING_EVENTS_CASE).unwrap();
     }
 }
