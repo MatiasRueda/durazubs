@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use durazubs::model::format::ass::stylist::stylist::{style_type::StyleType, stylist::Stylist};
+    use durazubs::model::format::ass::{
+        parser::parser_error::ParseRes,
+        stylist::stylist::{style_type::StyleType, stylist::Stylist},
+    };
 
     struct TestCase {
         name: &'static str,
@@ -175,38 +178,49 @@ mod tests {
         ],
     };
 
-    fn run_test_case(test_case: &TestCase, style_type: &StyleType) {
+    static CORRUPT_METADATA_CASE: TestCase = TestCase {
+        name: "fails on corrupt script info",
+        input: &["[Script Info]", "InvalidMetadataLine"],
+        expected: &[],
+    };
+
+    fn run_test_case(test_case: &TestCase, style_type: &StyleType) -> ParseRes<()> {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
         let stylist = Stylist::new(style_type);
-        let result = stylist
-            .run(&input)
-            .unwrap_or_else(|e| panic!("Case '{}': unexpected error {:?}", test_case.name, e));
+        let result = stylist.run(&input)?;
         assert_eq!(result, expected, "Failed at case: {}", test_case.name);
+        Ok(())
     }
 
     #[test]
-    fn test_main_strategy() {
-        run_test_case(&MAIN_CASE, &StyleType::Main);
+    fn test_main_strategy() -> ParseRes<()> {
+        run_test_case(&MAIN_CASE, &StyleType::Main)
     }
 
     #[test]
-    fn test_second_strategy() {
-        run_test_case(&SECOND_CASE, &StyleType::Second);
+    fn test_second_strategy() -> ParseRes<()> {
+        run_test_case(&SECOND_CASE, &StyleType::Second)
     }
 
     #[test]
-    fn test_replaces_existing_styles() {
-        run_test_case(&EXISTING_STYLE_CASE, &StyleType::Main);
+    fn test_replaces_existing_styles() -> ParseRes<()> {
+        run_test_case(&EXISTING_STYLE_CASE, &StyleType::Main)
     }
 
     #[test]
-    fn test_replaces_multiple_styles() {
-        run_test_case(&MULTIPLE_STYLES_CASE, &StyleType::Main);
+    fn test_replaces_multiple_styles() -> ParseRes<()> {
+        run_test_case(&MULTIPLE_STYLES_CASE, &StyleType::Main)
     }
 
     #[test]
-    fn test_full_info_case() {
-        run_test_case(&FULL_INFO_CASE, &StyleType::Main);
+    fn test_full_info_case() -> ParseRes<()> {
+        run_test_case(&FULL_INFO_CASE, &StyleType::Main)
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fails_on_corrupt_metadata() {
+        run_test_case(&CORRUPT_METADATA_CASE, &StyleType::Main).unwrap();
     }
 }
