@@ -75,7 +75,7 @@ impl AssProcessor {
         let mut cleaner = Cleaner::new();
         let sorter = Sorter::new();
         let mut synchronizer = Synchronizer::new();
-        cleaner.run(lines_a);
+        cleaner.run(lines_a)?;
         let sortered_lines_a = sorter.run(lines_a)?;
         let mut result = synchronizer.run(&sortered_lines_a, lines_b)?;
         if self.translate && self.external_translation {
@@ -95,7 +95,7 @@ impl AssProcessor {
         let mut cleaner = Cleaner::new();
         let sorter = Sorter::new();
         let mut extractor = SceneExtractor::new();
-        cleaner.run(lines);
+        cleaner.run(lines)?;
         let ordered_lines = sorter.run(lines)?;
         let scenes = extractor.run(&ordered_lines)?;
         let instructor = Instructor::new();

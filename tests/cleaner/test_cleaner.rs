@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use durazubs::model::format::ass::cleaner::cleaner::Cleaner;
+    use durazubs::model::format::ass::{cleaner::cleaner::Cleaner, parser::parser_error::ParseRes};
 
     struct TestCase {
         name: &'static str,
@@ -99,41 +99,54 @@ mod tests {
         expected: &[],
     };
 
-    fn run_test_case(test_case: &TestCase) {
+    static CORRUPT_LINE_CASE: TestCase = TestCase {
+        name: "should fail on corrupt ass line",
+        input: &["Dialogue: invalid,data,without,proper,format"],
+        expected: &[],
+    };
+
+    fn run_test_case(test_case: &TestCase) -> ParseRes<()> {
         let mut input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
         let mut cleaner = Cleaner::new();
-        cleaner.run(&mut input);
+        cleaner.run(&mut input)?;
         assert_eq!(input, expected, "Failed at case: {}", test_case.name);
+        Ok(())
     }
 
     #[test]
-    fn test_clean_basic_duplicates() {
-        run_test_case(&DUPLICATE_CASE);
+    fn test_clean_basic_duplicates() -> ParseRes<()> {
+        run_test_case(&DUPLICATE_CASE)
     }
 
     #[test]
-    fn test_clean_filter_effects() {
-        run_test_case(&FILTER_EFFECTS_CASE);
+    fn test_clean_filter_effects() -> ParseRes<()> {
+        run_test_case(&FILTER_EFFECTS_CASE)
     }
 
     #[test]
-    fn test_clean_remove_op_style() {
-        run_test_case(&REMOVE_OP_STYLE_CASE);
+    fn test_clean_remove_op_style() -> ParseRes<()> {
+        run_test_case(&REMOVE_OP_STYLE_CASE)
     }
 
     #[test]
-    fn test_clean_with_format() {
-        run_test_case(&WITH_FORMAT_CASE);
+    fn test_clean_with_format() -> ParseRes<()> {
+        run_test_case(&WITH_FORMAT_CASE)
     }
 
     #[test]
-    fn test_clean_ignored_junk() {
-        run_test_case(&JUNK_IGNORED_CASE);
+    fn test_clean_ignored_junk() -> ParseRes<()> {
+        run_test_case(&JUNK_IGNORED_CASE)
     }
 
     #[test]
-    fn test_clean_excessive_tags() {
-        run_test_case(&LONG_TAGS_CASE);
+    fn test_clean_excessive_tags() -> ParseRes<()> {
+        run_test_case(&LONG_TAGS_CASE)
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fails_on_corrupt_data() {
+        run_test_case(&CORRUPT_LINE_CASE).unwrap();
     }
 }

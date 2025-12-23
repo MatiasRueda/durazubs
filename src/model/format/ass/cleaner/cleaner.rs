@@ -12,7 +12,7 @@ impl Cleaner {
     }
 
     fn get_key(&self, line: &str) -> ParseRes<String> {
-        Ok(self.parser.get_line_key(line)?)
+        self.parser.get_line_key(line)
     }
 
     pub fn should_skip_line(&self, line: &str) -> ParseRes<bool> {
@@ -20,54 +20,39 @@ impl Cleaner {
         let is_empty = self.parser.is_text_empty(line)?;
         let too_many_tags = self.parser.has_excessive_tags(line);
         let is_technical_garbage = self.parser.is_technical_garbage(line)?;
-
         Ok(is_special || is_empty || too_many_tags || is_technical_garbage)
     }
 
-    fn is_duplicate(&self, key: &String, last_key: &Option<String>) -> bool {
-        Some(key) == last_key.as_ref()
-    }
-
-    fn update_last_and_keep(&self, last_key: &mut Option<String>, key: String) -> bool {
-        *last_key = Some(key);
-        true
-    }
-
     fn handle_duplicate(&self, key: String, last_key: &mut Option<String>) -> bool {
-        match self.is_duplicate(&key, last_key) {
-            true => false,
-            false => self.update_last_and_keep(last_key, key),
+        if Some(&key) == last_key.as_ref() {
+            false
+        } else {
+            *last_key = Some(key);
+            true
         }
     }
 
-    fn process_key(&self, line: &str, last_key: &mut Option<String>) -> bool {
-        match self.get_key(line) {
-            Ok(key) => self.handle_duplicate(key, last_key),
-            Err(_) => false,
+    fn should_keep_line(&self, line: &str, last_key: &mut Option<String>) -> ParseRes<bool> {
+        if !self.parser.is_dialogue(line) {
+            return Ok(false);
         }
+        if self.should_skip_line(line)? {
+            return Ok(false);
+        }
+        let key = self.get_key(line)?;
+        Ok(self.handle_duplicate(key, last_key))
     }
 
-    fn evaluate_skip(&self, line: &str, last_key: &mut Option<String>) -> bool {
-        match self.should_skip_line(line) {
-            Ok(true) => false,
-            Ok(false) => self.process_key(line, last_key),
-            Err(_) => false,
-        }
-    }
-
-    fn should_keep_line(&self, line: &str, last_key: &mut Option<String>) -> bool {
-        match self.parser.is_dialogue(line) {
-            false => false,
-            true => self.evaluate_skip(line, last_key),
-        }
-    }
-
-    fn process_lines(&mut self, lines: &mut Vec<String>) {
+    pub fn run(&mut self, lines: &mut Vec<String>) -> ParseRes<()> {
         let mut last_key: Option<String> = None;
-        lines.retain(|line| self.should_keep_line(line, &mut last_key));
-    }
-
-    pub fn run(&mut self, lines: &mut Vec<String>) {
-        self.process_lines(lines);
+        let mut i = 0;
+        while i < lines.len() {
+            if self.should_keep_line(&lines[i], &mut last_key)? {
+                i += 1;
+            } else {
+                lines.remove(i);
+            }
+        }
+        Ok(())
     }
 }
