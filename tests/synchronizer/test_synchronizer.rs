@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     use durazubs::model::format::ass::{
-        parser::parser_error::ParseRes, synchronizer::synchronizer::Synchronizer,
+        parser::parser_error::{ParseRes, ParserError},
+        synchronizer::synchronizer::Synchronizer,
     };
 
     struct TestCase {
@@ -128,6 +129,29 @@ mod tests {
         Ok(())
     }
 
+    static CORRUPT_SHORT_CASE: TestCase = TestCase {
+        name: "fails with very few fields (4)",
+        input_a: &["[Events]", "Dialogue: 0,0:00:01.00,Start,End"],
+        input_b: &[
+            "[Events]",
+            "Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Ok",
+        ],
+        expected: &[],
+    };
+
+    static CORRUPT_LONG_CASE: TestCase = TestCase {
+        name: "fails with almost all fields but missing text (9)",
+        input_a: &[
+            "[Events]",
+            "Dialogue: 0,0:00:01.00,0:00:02.00,Default,Name,0,0,0,Effect",
+        ],
+        input_b: &[
+            "[Events]",
+            "Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Ok",
+        ],
+        expected: &[],
+    };
+
     #[test]
     fn test_basic_synchronization() -> ParseRes<()> {
         run_test_case(&BASIC_SYNC_CASE)
@@ -142,5 +166,23 @@ mod tests {
     #[should_panic]
     fn test_fails_on_missing_events() {
         run_test_case(&MISSING_EVENTS_CASE).unwrap();
+    }
+
+    #[test]
+    fn test_error_on_short_line() {
+        let result = run_test_case(&CORRUPT_SHORT_CASE);
+        match result {
+            Err(ParserError::MissingFields { found }) => assert_eq!(found, 4),
+            _ => panic!("Expected MissingFields(4), got {:?}", result),
+        }
+    }
+
+    #[test]
+    fn test_error_on_almost_complete_line() {
+        let result = run_test_case(&CORRUPT_LONG_CASE);
+        match result {
+            Err(ParserError::MissingFields { found }) => assert_eq!(found, 9),
+            _ => panic!("Expected MissingFields(9), got {:?}", result),
+        }
     }
 }
