@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use durazubs::model::format::ass::extractor::scene_extractor::SceneExtractor;
+    use durazubs::model::format::ass::{
+        extractor::scene_extractor::SceneExtractor, parser::parser_error::ParseRes,
+    };
 
     struct TestCase {
         name: &'static str,
@@ -58,28 +60,39 @@ mod tests {
         expected: &["Extra 1", "Extra 2"],
     };
 
-    fn run_test_case(test_case: &TestCase) {
+    static CORRUPT_LINE_CASE: TestCase = TestCase {
+        name: "fails on corrupt dialogue line",
+        input: &["Dialogue: invalid,metadata,no,text"],
+        expected: &[],
+    };
+
+    fn run_test_case(test_case: &TestCase) -> ParseRes<()> {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
         let mut extractor = SceneExtractor::new();
-        let result = extractor
-            .run(&input)
-            .unwrap_or_else(|e| panic!("Case '{}': unexpected error {:?}", test_case.name, e));
+        let result = extractor.run(&input)?;
         assert_eq!(result, expected, "Failed at case: {}", test_case.name);
+        Ok(())
     }
 
     #[test]
-    fn test_extract_basic_case() {
-        run_test_case(&BASIC_CASE);
+    fn test_extract_basic_case() -> ParseRes<()> {
+        run_test_case(&BASIC_CASE)
     }
 
     #[test]
-    fn test_extract_without_additional_scenes() {
-        run_test_case(&NO_ADDITIONAL_SCENES_CASE);
+    fn test_extract_without_additional_scenes() -> ParseRes<()> {
+        run_test_case(&NO_ADDITIONAL_SCENES_CASE)
     }
 
     #[test]
-    fn test_extract_only_additional_scenes() {
-        run_test_case(&ONLY_ADDITIONAL_SCENES_CASE);
+    fn test_extract_only_additional_scenes() -> ParseRes<()> {
+        run_test_case(&ONLY_ADDITIONAL_SCENES_CASE)
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fails_on_corrupt_data() {
+        run_test_case(&CORRUPT_LINE_CASE).unwrap();
     }
 }
