@@ -1,4 +1,5 @@
 pub mod applier;
+pub mod ass_error;
 pub mod ass_processor;
 pub mod ass_segmenter;
 pub mod cleaner;
