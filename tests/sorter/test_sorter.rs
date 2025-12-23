@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use durazubs::model::format::ass::sorter::sorter::Sorter;
+    use durazubs::model::format::ass::{parser::parser_error::ParseRes, sorter::sorter::Sorter};
 
     struct TestCase {
         name: &'static str,
@@ -88,28 +88,39 @@ mod tests {
         ],
     };
 
-    fn run_test_case(test_case: &TestCase) {
+    static CORRUPT_TIME_CASE: TestCase = TestCase {
+        name: "fails on corrupt timestamp",
+        input: &["Dialogue: 0,99:XX:99.00,0:00:02.00,Default,,0,0,0,,Error"],
+        expected: &[],
+    };
+
+    fn run_test_case(test_case: &TestCase) -> ParseRes<()> {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
         let sorter = Sorter::new();
-        let result = sorter
-            .run(&input)
-            .unwrap_or_else(|e| panic!("Case '{}': unexpected error {:?}", test_case.name, e));
+        let result = sorter.run(&input)?;
         assert_eq!(result, expected, "Failed at case: {}", test_case.name);
+        Ok(())
     }
 
     #[test]
-    fn test_basic_ordering() {
-        run_test_case(&BASIC_ORDER_CASE);
+    fn test_basic_ordering() -> ParseRes<()> {
+        run_test_case(&BASIC_ORDER_CASE)
     }
 
     #[test]
-    fn test_ordering_with_metadata() {
-        run_test_case(&WITH_METADATA_CASE);
+    fn test_ordering_with_metadata() -> ParseRes<()> {
+        run_test_case(&WITH_METADATA_CASE)
     }
 
     #[test]
-    fn test_ordering_close_times() {
-        run_test_case(&CLOSE_TIMES_CASE);
+    fn test_ordering_close_times() -> ParseRes<()> {
+        run_test_case(&CLOSE_TIMES_CASE)
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fails_on_corrupt_time() {
+        run_test_case(&CORRUPT_TIME_CASE).unwrap();
     }
 }
