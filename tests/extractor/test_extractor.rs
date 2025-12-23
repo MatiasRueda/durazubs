@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     use durazubs::model::format::ass::{
-        extractor::scene_extractor::SceneExtractor, parser::parser_error::ParseRes,
+        extractor::scene_extractor::SceneExtractor,
+        parser::parser_error::{ParseRes, ParserError},
     };
 
     struct TestCase {
@@ -66,6 +67,12 @@ mod tests {
         expected: &[],
     };
 
+    static MISSING_FIELDS_CASE: TestCase = TestCase {
+        name: "fails when dialogue has missing fields",
+        input: &["Dialogue: 0,0:00:01.00,NotEnoughFields"],
+        expected: &[],
+    };
+
     fn run_test_case(test_case: &TestCase) -> ParseRes<()> {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
@@ -94,5 +101,14 @@ mod tests {
     #[should_panic]
     fn test_fails_on_corrupt_data() {
         run_test_case(&CORRUPT_LINE_CASE).unwrap();
+    }
+
+    #[test]
+    fn test_error_missing_fields() {
+        let result = run_test_case(&MISSING_FIELDS_CASE);
+        match result {
+            Err(ParserError::MissingFields { found }) => assert_eq!(found, 3),
+            _ => panic!("Expected MissingFields(3), got {:?}", result),
+        }
     }
 }
