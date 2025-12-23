@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use durazubs::model::format::ass::{
-        parser::parser_error::ParseRes,
+        parser::parser_error::{ParseRes, ParserError},
         stylist::stylist::{style_type::StyleType, stylist::Stylist},
     };
 
@@ -184,6 +184,12 @@ mod tests {
         expected: &[],
     };
 
+    static MISSING_FIELDS_CASE: TestCase = TestCase {
+        name: "fails when dialogue has missing fields during restyling",
+        input: &["[Events]", "Dialogue: 10,0:00:01.00,ShortLine"],
+        expected: &[],
+    };
+
     fn run_test_case(test_case: &TestCase, style_type: &StyleType) -> ParseRes<()> {
         let input: Vec<String> = test_case.input.iter().map(|s| s.to_string()).collect();
         let expected: Vec<String> = test_case.expected.iter().map(|s| s.to_string()).collect();
@@ -222,5 +228,14 @@ mod tests {
     #[should_panic]
     fn test_fails_on_corrupt_metadata() {
         run_test_case(&CORRUPT_METADATA_CASE, &StyleType::Main).unwrap();
+    }
+
+    #[test]
+    fn test_error_missing_fields() {
+        let result = run_test_case(&MISSING_FIELDS_CASE, &StyleType::Main);
+        match result {
+            Err(ParserError::MissingFields { found }) => assert_eq!(found, 3),
+            _ => panic!("Expected MissingFields(3), got {:?}", result),
+        }
     }
 }
