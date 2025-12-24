@@ -1,6 +1,6 @@
 use crate::model::{
     format::ass::{
-        applier::scene_applier::SceneApplier,
+        applier::SceneApplier,
         cleaner::Cleaner,
         extractor::SceneExtractor,
         parser::parser_error::{ParseRes, ParserError},
