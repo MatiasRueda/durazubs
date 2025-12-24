@@ -87,10 +87,6 @@ impl<'a> Blocks<'a> {
         Ok(None)
     }
 
-    pub fn peek_first_block(&'_ self) -> Block<'_> {
-        self.queue.front().unwrap().clone()
-    }
-
     pub fn pop_first_block(&mut self) -> Option<Block<'a>> {
         self.queue.pop_front()
     }
@@ -101,9 +97,5 @@ impl<'a> Blocks<'a> {
 
     pub fn has_blocks(&self) -> bool {
         !self.queue.is_empty()
-    }
-
-    pub fn consume_first_block(&mut self) {
-        self.queue.pop_front();
     }
 }
