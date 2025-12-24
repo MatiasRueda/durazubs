@@ -1,7 +1,9 @@
 pub struct Instructor {}
 
 impl Instructor {
+    const LAST_ELEMENT_OFFSET: usize = 1;
     const CHUNK_SIZE: usize = 40;
+    const EXTRA_ELEMENTS_PER_CHUNK: usize = 2;
     const INSTRUCTION: &str = "Act as an expert anime translator. You will process a block of subtitles from ENGLISH to NEUTRAL LATIN AMERICAN SPANISH.
     Strict rules:
     1. MAINTAIN FORMAT: The total number of output lines must be exactly equal to the input.
@@ -16,14 +18,17 @@ impl Instructor {
 
     pub fn run(&self, lines: &Vec<String>) -> Vec<String> {
         let chunk_count = (lines.len() as f64 / Self::CHUNK_SIZE as f64).ceil() as usize;
-        let total_capacity = chunk_count * (2 + Self::CHUNK_SIZE);
+        let total_capacity = chunk_count * (Self::EXTRA_ELEMENTS_PER_CHUNK + Self::CHUNK_SIZE);
         let mut result = Vec::with_capacity(total_capacity);
-
-        for chunk in lines.chunks(Self::CHUNK_SIZE) {
+        let chunks = lines.chunks(Self::CHUNK_SIZE);
+        let total_chunks = chunks.len();
+        for (i, chunk) in chunks.enumerate() {
             result.push(Self::INSTRUCTION.to_string());
             result.push("---".to_string());
             result.extend_from_slice(chunk);
-            result.push("\n".to_string());
+            if i < total_chunks - Self::LAST_ELEMENT_OFFSET {
+                result.push("\n".to_string());
+            }
         }
         result
     }
