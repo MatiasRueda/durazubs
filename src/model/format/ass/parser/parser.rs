@@ -55,10 +55,9 @@ impl Parser {
             .map(|s| s.to_string())
             .collect();
 
-        if parts.len() >= ASS_FIELDS_COUNT {
-            Ok(parts)
-        } else {
-            Err(ParserError::MissingFields { found: parts.len() })
+        match parts.len() >= ASS_FIELDS_COUNT {
+            true => Ok(parts),
+            false => Err(ParserError::MissingFields { found: parts.len() }),
         }
     }
 
@@ -268,9 +267,11 @@ impl Parser {
     }
 
     fn bool_to_str(active: bool) -> &'static str {
-        if active { "yes" } else { "no" }
+        match active {
+            true => "yes",
+            false => "no",
+        }
     }
-
     pub fn format_scaled_border(&self, active: bool) -> String {
         format!("{} {}", Self::SCALED_PREFIX, Self::bool_to_str(active))
     }

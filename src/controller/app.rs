@@ -97,10 +97,9 @@ impl App {
     }
 
     fn process_request_styler(&self) -> Option<String> {
-        if self.view.request_coloring() {
-            Some(self.view.request_style_type())
-        } else {
-            None
+        match self.view.request_coloring() {
+            true => Some(self.view.request_style_type()),
+            false => None,
         }
     }
 

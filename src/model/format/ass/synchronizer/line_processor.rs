@@ -39,10 +39,9 @@ impl<'a> LineProcessor<'a> {
     }
 
     fn try_insert_block(&mut self, blocks: &mut Blocks, step: &Steps) -> ParseRes<bool> {
-        if blocks.has_blocks() {
-            Ok(self.process_block(blocks, step)?)
-        } else {
-            Ok(false)
+        match blocks.has_blocks() {
+            true => Ok(self.process_block(blocks, step)?),
+            false => Ok(false),
         }
     }
 
