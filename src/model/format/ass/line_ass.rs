@@ -2,6 +2,7 @@ use crate::model::line::Line;
 
 #[repr(usize)]
 pub enum AssField {
+    Layer = 0,
     Start = 1,
     End = 2,
     Style = 3,
@@ -20,6 +21,7 @@ impl AssField {
 
 #[derive(Debug, Clone)]
 pub struct AssLine {
+    pub layer: String,
     pub start: f64,
     pub end: f64,
     pub style: String,

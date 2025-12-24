@@ -101,11 +101,11 @@ static START_LATER_CASE: TestCase = TestCase {
         "",
         "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
-        "Dialogue: 10,0:00:01.00,0:00:03.00,Default,Character1,0,0,0,,Hola",
-        "Dialogue: 10,0:00:04.00,0:00:05.00,Default,Character2,0,0,0,,¿Cómo estás?",
+        "Dialogue: 0,0:00:01.00,0:00:03.00,Default,Character1,0,0,0,,Hola",
+        "Dialogue: 0,0:00:04.00,0:00:05.00,Default,Character2,0,0,0,,¿Cómo estás?",
         "Dialogue: 0,0:00:06.50,0:00:08.00,Default,ADDITIONAL SCENE,0,0,0,,Escena extra",
         "Dialogue: 0,0:00:08.50,0:00:09.50,Default,ADDITIONAL SCENE,0,0,0,,Continuación extra",
-        "Dialogue: 10,0:00:10.00,0:00:12.00,Default,Character3,0,0,0,,Bien, gracias",
+        "Dialogue: 0,0:00:10.00,0:00:12.00,Default,Character3,0,0,0,,Bien, gracias",
     ],
 };
 

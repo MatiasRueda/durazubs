@@ -15,8 +15,8 @@ static SCENE_REPLACEMENT_CASE: TestCase = TestCase {
     ],
     translations: &["Translated Text 1", "Translated Text 2"],
     expected: &[
-        "Dialogue: 10,0:00:10.00,0:00:12.00,Sign,ADDITIONAL SCENE,0,0,0,,Translated Text 1",
-        "Dialogue: 10,0:00:15.00,0:00:17.00,Sign,ADDITIONAL SCENE,0,0,0,,Translated Text 2",
+        "Dialogue: 0,0:00:10.00,0:00:12.00,Sign,ADDITIONAL SCENE,0,0,0,,Translated Text 1",
+        "Dialogue: 0,0:00:15.00,0:00:17.00,Sign,ADDITIONAL SCENE,0,0,0,,Translated Text 2",
     ],
 };
 
@@ -30,7 +30,7 @@ static SELECTIVE_APPLY_CASE: TestCase = TestCase {
     translations: &["Processed Scene"],
     expected: &[
         "Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Normal Subtitle",
-        "Dialogue: 10,0:00:20.00,0:00:22.00,Sign,ADDITIONAL SCENE,0,0,0,,Processed Scene",
+        "Dialogue: 0,0:00:20.00,0:00:22.00,Sign,ADDITIONAL SCENE,0,0,0,,Processed Scene",
         "Dialogue: 0,0:00:25.00,0:00:27.00,Default,,0,0,0,,Another Subtitle",
     ],
 };

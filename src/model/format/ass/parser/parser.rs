@@ -74,7 +74,8 @@ impl Parser {
 
     fn ass_line_to_string(&self, l: &AssLine) -> String {
         format!(
-            "Dialogue: 10,{},{},{},{},0,0,0,{},{}",
+            "Dialogue: {},{},{},{},{},0,0,0,{},{}",
+            l.layer,
             self.seconds_to_hms(l.start),
             self.seconds_to_hms(l.end),
             l.style,
@@ -113,6 +114,7 @@ impl Parser {
         let stripped = self.strip_dialogue(line)?;
         let parts = self.split_line(&stripped)?;
         Ok(AssLine {
+            layer: parts[AssField::Layer.index()].trim().to_string(),
             start: self.parse_time(&parts[AssField::Start.index()]),
             end: self.parse_time(&parts[AssField::End.index()]),
             style: parts[AssField::Style.index()].trim().to_string(),
