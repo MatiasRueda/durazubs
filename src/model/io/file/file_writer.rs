@@ -16,6 +16,27 @@ impl FileWriter {
 }
 
 impl Writer for FileWriter {
+    fn write_lines<'a, I>(&mut self, lines: I) -> Result<(), IOError>
+    where
+        I: IntoIterator<Item = &'a String>,
+    {
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&self.path)
+            .map_err(|_| IOError::WriteError {
+                context: self.path.clone(),
+            })?;
+
+        for l in lines {
+            writeln!(file, "{}", l).map_err(|_| IOError::WriteError {
+                context: self.path.clone(),
+            })?;
+        }
+        Ok(())
+    }
+
     fn write_line(&mut self, line: &str) -> Result<(), IOError> {
         let mut file = OpenOptions::new()
             .create(true)
