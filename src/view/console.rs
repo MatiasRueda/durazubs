@@ -146,4 +146,37 @@ impl Console {
         }
         println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
     }
+
+    pub fn request_path_a(&self) -> String {
+        loop {
+            print!("❯ Enter path for file A (e.g. 'input'): ");
+            let name = self.read_input();
+            match name.is_empty() {
+                false => return format!("{}.ass", name),
+                true => println!("  Path is required."),
+            }
+        }
+    }
+
+    pub fn request_path_b(&self) -> String {
+        loop {
+            print!("❯ Enter path for file B (e.g. 'input'): ");
+            let name = self.read_input();
+            match name.is_empty() {
+                false => return format!("{}.ass", name),
+                true => println!("  Path is required."),
+            }
+        }
+    }
+
+    pub fn request_output_path(&self) -> String {
+        loop {
+            print!("❯ Enter name for the RESULT file: ");
+            let name = self.read_input();
+            if !name.is_empty() {
+                return format!("{}.ass", name);
+            }
+            println!("  Output name is required.");
+        }
+    }
 }

@@ -23,12 +23,19 @@ pub struct App {
 impl App {
     const TRANSLATIONS_PATH: &str = "translations.txt";
 
-    pub fn new(path_a: &str, path_b: &str, output_path: &str) -> Self {
+    pub fn new() -> Self {
+        let view = Console::new();
+        view.show_welcome();
+        view.line_break();
+        let path_a = view.request_path_a();
+        let path_b = view.request_path_b();
+        let output_path = view.request_output_path();
+        view.line_break();
         Self {
-            reader_a: FileReader::new(path_a),
-            reader_b: FileReader::new(path_b),
-            writer: FileWriter::new(output_path),
-            view: Console::new(),
+            reader_a: FileReader::new(&path_a),
+            reader_b: FileReader::new(&path_b),
+            writer: FileWriter::new(&output_path),
+            view,
         }
     }
 
@@ -138,8 +145,6 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        self.view.show_welcome();
-
         let result: AssRes<()> = (|| {
             self.view.reading_step();
             let mut lines_a = self.reader_a.read_lines()?;
