@@ -111,9 +111,9 @@ impl App {
     ) -> AssRes<()> {
         let should_translate = self.view.request_scene_translation();
         processor.with_translation(should_translate);
-
-        if should_translate {
-            self.translation_method(processor, lines)?;
+        match should_translate {
+            true => self.translation_method(processor, lines)?,
+            false => self.view.line_break(),
         }
         Ok(())
     }
