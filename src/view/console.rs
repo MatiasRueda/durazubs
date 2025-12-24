@@ -17,9 +17,30 @@ impl Console {
     }
 
     pub fn show_welcome(&self) {
-        println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        println!("       DURAZUBS SUBTITLE PROCESSOR v1.0         ");
-        println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        println!("\n┌──────────────────────────────────────────────────┐");
+        println!("│         DURAZUBS SUBTITLE PROCESSOR v1.0         │");
+        println!("└──────────────────────────────────────────────────┘");
+    }
+
+    pub fn show_app_description(&self) {
+        println!("\n┌──────────────────────────────────────────────────┐");
+        println!("│                WORKFLOW & LOGIC                  │");
+        println!("├──────────────────────────────────────────────────┤");
+        println!("│ 1. INPUT A:    File with correct TIMESTAMPS      │");
+        println!("│ 2. INPUT B:    File with the desired TEXTS       │");
+        println!("│ 3. OUTPUT:     Name for the merged result        │");
+        println!("│                                                  │");
+        println!("│ 4. STYLING (Optional):                           │");
+        println!("│    Apply custom visual profiles and font         │");
+        println!("│    styles to the final output file.              │");
+        println!("│                                                  │");
+        println!("│ 5. AI ENGINE (Optional):                         │");
+        println!("│    Ideal for Blu-Ray extended scenes. If a line  │");
+        println!("│    exists in 'A' but is missing in 'B', AI will  │");
+        println!("│    translate it using Llama3 or Cloud Mode.      │");
+        println!("│                                                  │");
+        println!("│ 6. MERGE:      Final sync and file export        │");
+        println!("└──────────────────────────────────────────────────┘");
     }
 
     fn show_step(&self, label: &str, message: &str) {
@@ -111,12 +132,13 @@ impl Console {
     }
 
     pub fn show_translation_instructions(&self) {
-        println!("\n");
-        println!("━━━━━━━━━━━━━ AI EXPORT INSTRUCTIONS ━━━━━━━━━━━━━");
-        println!(" 1. Copy the generated export file content.");
-        println!(" 2. Process via AI and save as 'translations.txt'.");
-        println!(" 3. Place 'translations.txt' in the root folder.");
-        println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        println!("\n┌──────────────────────────────────────────────────┐");
+        println!("│             AI EXPORT INSTRUCTIONS               │");
+        println!("├──────────────────────────────────────────────────┤");
+        println!("│ 1. Copy the generated export file content.       │");
+        println!("│ 2. Process via AI and save as 'translations.txt'.│");
+        println!("│ 3. Place 'translations.txt' in the root folder.  │");
+        println!("└──────────────────────────────────────────────────┘");
     }
 
     pub fn wait_for_input(&self) {
@@ -136,15 +158,16 @@ impl Console {
         let mins = total_secs / 60;
         let secs = total_secs % 60;
 
-        println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        println!("  STATUS: Deployment Complete");
-        print!("  TIME: ");
+        println!("\n┌──────────────────────────────────────────────────┐");
+        println!("│           STATUS: Deployment Complete            │");
+        print!("│           TIME: ");
         match (mins, secs) {
-            (0, s) => println!("{} seconds", s),
-            (m, 0) => println!("{} minutes", m),
-            (m, s) => println!("{}m {}s", m, s),
+            (0, s) => print!("{:>2} seconds", s),
+            (m, 0) => print!("{:>2} minutes", m),
+            (m, s) => print!("{}m {}s", m, s),
         }
-        println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        println!("                       │");
+        println!("└──────────────────────────────────────────────────┘\n");
     }
 
     pub fn request_path_a(&self) -> String {

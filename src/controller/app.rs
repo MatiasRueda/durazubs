@@ -27,6 +27,8 @@ impl App {
         let view = Console::new();
         view.show_welcome();
         view.line_break();
+        view.show_app_description();
+        view.line_break();
         let path_a = view.request_path_a();
         let path_b = view.request_path_b();
         let output_path = view.request_output_path();
