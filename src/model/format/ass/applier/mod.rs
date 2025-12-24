@@ -39,3 +39,6 @@ impl SceneApplier {
         self.proc(ls, ts)
     }
 }
+
+#[cfg(test)]
+mod tests;
