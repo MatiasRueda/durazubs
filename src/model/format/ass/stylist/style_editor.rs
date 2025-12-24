@@ -1,6 +1,6 @@
 use crate::model::format::ass::{
     parser::{parser::Parser, parser_error::ParseRes},
-    stylist::{style_strategy::StyleStrategy, stylist::script_preparer::ScriptPreparer},
+    stylist::{script_preparer::ScriptPreparer, style_strategy::StyleStrategy},
 };
 
 pub struct StyleEditor<'a> {

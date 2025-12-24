@@ -1,12 +1,12 @@
 use crate::model::{
     format::ass::{
         applier::scene_applier::SceneApplier,
-        cleaner::cleaner::Cleaner,
-        extractor::scene_extractor::SceneExtractor,
+        cleaner::Cleaner,
+        extractor::SceneExtractor,
         parser::parser_error::{ParseRes, ParserError},
-        sorter::sorter::Sorter,
-        stylist::stylist::{style_type::StyleType, stylist::Stylist},
-        synchronizer::synchronizer::Synchronizer,
+        sorter::Sorter,
+        stylist::{Stylist, style_type::StyleType},
+        synchronizer::Synchronizer,
     },
     subtitle_processor::{ProcRes, SubtitleProcessor},
     translator::{instructor::Instructor, translator::Translator},

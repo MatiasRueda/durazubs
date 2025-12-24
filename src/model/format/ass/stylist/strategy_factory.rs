@@ -1,9 +1,7 @@
 use crate::model::format::ass::stylist::{
+    strategies::{main_strategy::MainStrategy, second_strategy::SecondStrategy},
     style_strategy::StyleStrategy,
-    stylist::{
-        strategies::{main_strategy::MainStrategy, second_strategy::SecondStrategy},
-        style_type::StyleType,
-    },
+    style_type::StyleType,
 };
 
 pub struct StrategyFactory;
