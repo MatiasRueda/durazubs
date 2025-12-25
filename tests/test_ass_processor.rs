@@ -57,6 +57,30 @@ mod tests {
         expected_output: &["Línea 1"],
     };
 
+    static SYNC_CASE: TestCase = TestCase {
+        name: "generic sync: timing recalibration and noise removal",
+        input_a: &[
+            "[Events]",
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+            "Comment: 0,0:00:00.00,0:00:05.00,Noise,,0,0,0,,DISCARD_ME",
+            "Dialogue: 10,0:00:01.50,0:00:03.00,OldStyle,Actor,0,0,0,,Line 1 text A",
+            "Dialogue: 10,0:00:04.00,0:00:07.00,OldStyle,Actor,0,0,0,,Line 2 text A",
+        ],
+        input_b: &[
+            "[Events]",
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+            "Dialogue: 0,0:00:00.50,0:00:02.50,OtherStyle,,0000,0000,0000,,Line 1 text B",
+            "Dialogue: 0,0:00:03.00,0:00:05.50,OtherStyle,,0000,0000,0000,,Line 2 Text B",
+        ],
+        expected_fields: None,
+        expected_output: &[
+            "[Events]",
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+            "Dialogue: 0,0:00:01.50,0:00:03.50,OtherStyle,,0,0,0,,Line 1 text B",
+            "Dialogue: 0,0:00:04.00,0:00:06.50,OtherStyle,,0,0,0,,Line 2 Text B",
+        ],
+    };
+
     static EXTRACT_SUCCESS_CASE: TestCase = TestCase {
         name: "extracts additional scenes correctly",
         input_a: &[
@@ -78,10 +102,9 @@ mod tests {
 
     fn run_test_case(test_case: &TestCase) -> ParseRes<Vec<String>> {
         let mut proc = AssProcessor::new();
-        proc.with_translation(false);
         let mut lines_a: Vec<String> = test_case.input_a.iter().map(|s| s.to_string()).collect();
         let lines_b: Vec<String> = test_case.input_b.iter().map(|s| s.to_string()).collect();
-        proc.process(&mut lines_a, &lines_b)
+        proc.synchronize(&mut lines_a, &lines_b)
     }
 
     #[test]
@@ -94,6 +117,23 @@ mod tests {
             "Case failed: {}",
             SUCCESS_CASE.name
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_generic_synchronization_logic() -> ParseRes<()> {
+        let mut proc = AssProcessor::new();
+        let mut lines_a: Vec<String> = SYNC_CASE.input_a.iter().map(|s| s.to_string()).collect();
+        let lines_b: Vec<String> = SYNC_CASE.input_b.iter().map(|s| s.to_string()).collect();
+        let synced = proc.synchronize(&mut lines_a, &lines_b)?;
+        for (i, expected_line) in SYNC_CASE.expected_output.iter().enumerate() {
+            assert_eq!(
+                synced[i], *expected_line,
+                "Fallo en la sincronización de la línea {}: se esperaba un tiempo y estilo específicos",
+                i
+            );
+        }
+
         Ok(())
     }
 

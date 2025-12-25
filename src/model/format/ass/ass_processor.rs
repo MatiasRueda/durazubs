@@ -3,30 +3,22 @@ use crate::model::{
         applier::SceneApplier,
         cleaner::Cleaner,
         extractor::SceneExtractor,
-        parser::parser_error::{ParseRes, ParserError},
+        parser::parser_error::ParserError,
         sorter::Sorter,
         stylist::{Stylist, style_type::StyleType},
         synchronizer::Synchronizer,
     },
     subtitle_processor::{ProcRes, SubtitleProcessor},
-    translator::{instructor::Instructor, translator::Translator},
+    translator::instructor::Instructor,
 };
 
 pub struct AssProcessor {
     style_type: Option<StyleType>,
-    translate: bool,
-    external_translation: bool,
-    external_subs: Vec<String>,
 }
 
 impl AssProcessor {
     pub fn new() -> Self {
-        Self {
-            style_type: None,
-            translate: false,
-            external_translation: false,
-            external_subs: Vec::new(),
-        }
+        Self { style_type: None }
     }
 
     fn identify_style(&self, s: &str) -> StyleType {
@@ -40,76 +32,38 @@ impl AssProcessor {
         self.style_type = style_name.map(|s| self.identify_style(&s));
         self
     }
-
-    pub fn with_translation(&mut self, value: bool) {
-        self.translate = value;
-    }
-
-    pub fn translated_subtitles(&mut self, translations: Vec<String>) {
-        self.external_translation = true;
-        self.external_subs = translations;
-    }
-
-    fn apply_coloring(&mut self, lines: &Vec<String>) -> ParseRes<Vec<String>> {
-        let style = self.style_type.as_ref().unwrap_or(&StyleType::Main);
-        let stylist = Stylist::new(style);
-        stylist.run(lines)
-    }
-
-    fn apply_translation(&mut self, lines: &Vec<String>) -> ParseRes<Vec<String>> {
-        let mut extractor = SceneExtractor::new();
-        let translator = Translator::new();
-        let mut applier = SceneApplier::new();
-
-        let additional_scenes = extractor.run(lines)?;
-        let translated_lines = translator.run(&additional_scenes);
-
-        applier.run(lines, &translated_lines)
-    }
-
-    fn execute(&mut self, lines_a: &mut Vec<String>, lines_b: &[String]) -> ParseRes<Vec<String>> {
-        let mut cleaner = Cleaner::new();
-        let sorter = Sorter::new();
-        let mut synchronizer = Synchronizer::new();
-        cleaner.run(lines_a)?;
-        let sortered_lines_a = sorter.run(lines_a)?;
-        let mut result = synchronizer.run(&sortered_lines_a, lines_b)?;
-        if self.translate && self.external_translation {
-            let mut applier = SceneApplier::new();
-            result = applier.run(&result, &self.external_subs)?;
-        }
-        if self.translate && !self.external_translation {
-            result = self.apply_translation(&result)?;
-        }
-        if self.style_type.is_some() {
-            result = self.apply_coloring(&result)?;
-        }
-        Ok(result)
-    }
-
-    fn extract_additional_scenes(&self, lines: &mut Vec<String>) -> ParseRes<Vec<String>> {
-        let mut cleaner = Cleaner::new();
-        let sorter = Sorter::new();
-        let mut extractor = SceneExtractor::new();
-        cleaner.run(lines)?;
-        let ordered_lines = sorter.run(lines)?;
-        let scenes = extractor.run(&ordered_lines)?;
-        let instructor = Instructor::new();
-        Ok(instructor.run(&scenes))
-    }
 }
+
 impl SubtitleProcessor for AssProcessor {
     type Error = ParserError;
 
-    fn process(
+    fn synchronize(
         &mut self,
-        lines_a: &mut Vec<String>,
-        lines_b: &[String],
+        l_a: &mut Vec<String>,
+        l_b: &[String],
     ) -> ProcRes<Vec<String>, Self::Error> {
-        self.execute(lines_a, lines_b)
+        Cleaner::new().run(l_a)?;
+        let sorted = Sorter::new().run(l_a)?;
+        Synchronizer::new().run(&sorted, l_b)
     }
 
     fn get_lines_to_translate(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
-        self.extract_additional_scenes(lines)
+        Cleaner::new().run(lines)?;
+        let ordered = Sorter::new().run(lines)?;
+        let scenes = SceneExtractor::new().run(&ordered)?;
+        Ok(Instructor::new().run(&scenes))
+    }
+
+    fn apply_translation(
+        &mut self,
+        lines: &mut Vec<String>,
+        translations: Vec<String>,
+    ) -> ProcRes<Vec<String>, Self::Error> {
+        SceneApplier::new().run(lines, &translations)
+    }
+
+    fn apply_style(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+        let style = self.style_type.as_ref().unwrap_or(&StyleType::Main);
+        Stylist::new(style).run(lines)
     }
 }

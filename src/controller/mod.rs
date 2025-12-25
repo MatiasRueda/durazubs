@@ -28,8 +28,8 @@ impl<V: View> App<V> {
     }
 
     fn handle_translation_error(&self) -> Option<Vec<String>> {
-        let msg = format!("Source '{}' not found.", Self::TRANSLATIONS_PATH);
-        self.view.display_error(&msg);
+        self.view
+            .display_error(&format!("Source '{}' not found.", Self::TRANSLATIONS_PATH));
         None
     }
 
@@ -40,21 +40,13 @@ impl<V: View> App<V> {
         }
     }
 
-    fn attempt_translation_read(&self) -> Option<Vec<String>> {
-        match self.try_read_translations() {
-            Some(lines) => Some(lines),
-            None => None,
-        }
-    }
-
     fn read_translations(&self) -> Vec<String> {
         self.view
             .display_status(AppStatus::InstructionsForTranslation);
-
         loop {
             match self.view.confirm_translation_ready() {
                 true => {
-                    if let Some(lines) = self.attempt_translation_read() {
+                    if let Some(lines) = self.try_read_translations() {
                         return lines;
                     }
                 }
@@ -63,65 +55,63 @@ impl<V: View> App<V> {
         }
     }
 
-    fn process_translation(
-        &self,
-        processor: &mut AssProcessor,
-        lines: &mut Vec<String>,
-    ) -> AssRes<()> {
-        if !self.config.translation_enabled {
-            return Ok(());
-        }
-        let ai_lines = processor.get_lines_to_translate(lines)?;
-        let mut temp_writer = FileWriter::new("to_translate.txt");
-        temp_writer.write_lines(&ai_lines)?;
-        let translations = self.read_translations();
-        processor.translated_subtitles(translations);
-
-        Ok(())
-    }
-
-    pub fn prepare_processor(
-        &self,
-        lines: &mut Vec<String>,
-    ) -> AssRes<Box<dyn SubtitleProcessor<Error = ParserError>>> {
-        let mut processor = AssProcessor::new().with_style(self.config.style.clone());
-        processor.with_translation(self.config.translation_enabled);
-
-        if self.config.translation_enabled {
-            self.process_translation(&mut processor, lines)?;
-        }
-
-        Ok(Box::new(processor))
-    }
-
-    fn read_source_files(&self) -> AssRes<(Vec<String>, Vec<String>)> {
+    fn step_read_files(&self) -> AssRes<(Vec<String>, Vec<String>)> {
+        self.view.display_status(AppStatus::Reading);
         let lines_a = FileReader::new(&self.config.path_a).read_lines()?;
         let lines_b = FileReader::new(&self.config.path_b).read_lines()?;
         Ok((lines_a, lines_b))
     }
 
-    fn execute_processing(
+    fn step_synchronize(
         &self,
-        lines_a: &mut Vec<String>,
-        lines_b: &[String],
+        processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
+        l_a: &mut Vec<String>,
+        l_b: &[String],
     ) -> AssRes<Vec<String>> {
-        let mut processor = self.prepare_processor(lines_a)?;
         self.view.display_status(AppStatus::Processing);
-        Ok(processor.process(lines_a, lines_b)?)
+        Ok(processor.synchronize(l_a, l_b)?)
     }
 
-    fn save_output(&self, final_result: &[String]) -> AssRes<()> {
-        self.view.display_status(AppStatus::Writing);
-        FileWriter::new(&self.config.output_path).write_lines(final_result)?;
-        Ok(())
+    fn step_translate(
+        &self,
+        processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
+        lines: &mut Vec<String>,
+    ) -> AssRes<Vec<String>> {
+        match self.config.translation_enabled {
+            true => {
+                let to_translate = processor.get_lines_to_translate(lines)?;
+                FileWriter::new("to_translate.txt").write_lines(&to_translate)?;
+
+                let translations = self.read_translations();
+                Ok(processor.apply_translation(lines, translations)?)
+            }
+            false => Ok(lines.clone()),
+        }
+    }
+
+    fn step_style(
+        &self,
+        processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
+        lines: &mut Vec<String>,
+    ) -> AssRes<Vec<String>> {
+        match self.config.style {
+            Some(_) => Ok(processor.apply_style(lines)?),
+            None => Ok(lines.clone()),
+        }
     }
 
     fn execute_workflow(&mut self) -> AssRes<f64> {
-        self.view.display_status(AppStatus::Reading);
-        let (mut lines_a, lines_b) = self.read_source_files()?;
+        let (mut lines_a, lines_b) = self.step_read_files()?;
+        let mut processor: Box<dyn SubtitleProcessor<Error = ParserError>> =
+            Box::new(AssProcessor::new().with_style(self.config.style.clone()));
         let start_time = Instant::now();
-        let final_result = self.execute_processing(&mut lines_a, &lines_b)?;
-        self.save_output(&final_result)?;
+        let mut current_lines = self.step_synchronize(&mut processor, &mut lines_a, &lines_b)?;
+        current_lines = self.step_translate(&mut processor, &mut current_lines)?;
+        current_lines = self.step_style(&mut processor, &mut current_lines)?;
+
+        self.view.display_status(AppStatus::Writing);
+        FileWriter::new(&self.config.output_path).write_lines(&current_lines)?;
+
         Ok(start_time.elapsed().as_secs_f64())
     }
 
