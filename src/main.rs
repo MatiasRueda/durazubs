@@ -1,4 +1,4 @@
-use durazubs::controller::app::App;
+use durazubs::controller::App;
 use durazubs::view::console::Console;
 
 fn main() {
