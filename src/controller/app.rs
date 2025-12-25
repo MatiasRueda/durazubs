@@ -10,159 +10,125 @@ use crate::{
         subtitle_processor::SubtitleProcessor,
         writer::Writer,
     },
-    view::console::Console,
+    view::{AppConfig, AppStatus, View},
 };
 
-pub struct App {
-    reader_a: FileReader,
-    reader_b: FileReader,
-    writer: FileWriter,
-    view: Console,
+pub struct App<V: View> {
+    view: V,
+    config: AppConfig,
 }
 
-impl App {
+impl<V: View> App<V> {
     const TRANSLATIONS_PATH: &str = "translations.txt";
 
-    pub fn new() -> Self {
-        let view = Console::new();
-        view.show_welcome();
-        view.line_break();
-        view.show_app_description();
-        view.line_break();
-        let path_a = view.request_path_a();
-        let path_b = view.request_path_b();
-        let output_path = view.request_output_path();
-        view.line_break();
-        Self {
-            reader_a: FileReader::new(&path_a),
-            reader_b: FileReader::new(&path_b),
-            writer: FileWriter::new(&output_path),
-            view,
-        }
+    pub fn new(view: V) -> Self {
+        view.display_status(AppStatus::Welcome);
+        let config = view.get_config();
+        Self { view, config }
     }
 
-    fn request_extracted_file_name(&self) -> String {
-        loop {
-            let name = self.view.request_file_name();
-            match name.to_lowercase().as_str() {
-                Self::TRANSLATIONS_PATH => self.view.file_name_error(),
-                _ => return name,
-            }
-        }
-    }
-
-    fn successful_read(&self, lines: Vec<String>) -> Option<Vec<String>> {
-        self.view.show_translation_load_success();
-        Some(lines)
-    }
-
-    fn failed_read(&self) -> Option<Vec<String>> {
-        self.view
-            .show_translation_read_error(Self::TRANSLATIONS_PATH);
+    fn handle_translation_error(&self) -> Option<Vec<String>> {
+        let msg = format!("Source '{}' not found.", Self::TRANSLATIONS_PATH);
+        self.view.display_error(&msg);
         None
     }
 
     fn try_read_translations(&self) -> Option<Vec<String>> {
         match FileReader::new(Self::TRANSLATIONS_PATH).read_lines() {
-            Ok(lines) => self.successful_read(lines),
-            Err(_) => self.failed_read(),
+            Ok(lines) => Some(lines),
+            Err(_) => self.handle_translation_error(),
+        }
+    }
+
+    fn attempt_translation_read(&self) -> Option<Vec<String>> {
+        match self.try_read_translations() {
+            Some(lines) => Some(lines),
+            None => None,
         }
     }
 
     fn read_translations(&self) -> Vec<String> {
-        self.view.show_translation_instructions();
+        self.view
+            .display_status(AppStatus::InstructionsForTranslation);
+
         loop {
-            self.view.wait_for_input();
-            if let Some(lines) = self.try_read_translations() {
-                return lines;
+            match self.view.confirm_translation_ready() {
+                true => {
+                    if let Some(lines) = self.attempt_translation_read() {
+                        return lines;
+                    }
+                }
+                false => return vec![],
             }
         }
     }
 
-    fn external_translation(
+    fn process_translation(
         &self,
         processor: &mut AssProcessor,
         lines: &mut Vec<String>,
     ) -> AssRes<()> {
-        let name = self.request_extracted_file_name();
+        if !self.config.translation_enabled {
+            return Ok(());
+        }
         let ai_lines = processor.get_lines_to_translate(lines)?;
-        let mut temp_writer = FileWriter::new(&name);
+        let mut temp_writer = FileWriter::new("to_translate.txt");
         temp_writer.write_lines(&ai_lines)?;
-
         let translations = self.read_translations();
         processor.translated_subtitles(translations);
+
         Ok(())
-    }
-
-    fn translation_method(
-        &self,
-        processor: &mut AssProcessor,
-        lines: &mut Vec<String>,
-    ) -> AssRes<()> {
-        match self.view.request_translation_type().as_str() {
-            "1" => Ok(()),
-            _ => self.external_translation(processor, lines),
-        }
-    }
-
-    fn process_request_styler(&self) -> Option<String> {
-        match self.view.request_coloring() {
-            true => Some(self.view.request_style_type()),
-            false => None,
-        }
-    }
-
-    fn process_request_translation(
-        &self,
-        processor: &mut AssProcessor,
-        lines: &mut Vec<String>,
-    ) -> AssRes<()> {
-        let should_translate = self.view.request_scene_translation();
-        processor.with_translation(should_translate);
-        match should_translate {
-            true => self.translation_method(processor, lines)?,
-            false => self.view.line_break(),
-        }
-        Ok(())
-    }
-
-    pub fn setup_ass_file(
-        &self,
-        lines: &mut Vec<String>,
-    ) -> AssRes<Box<dyn SubtitleProcessor<Error = ParserError>>> {
-        let style = self.process_request_styler();
-        let mut processor = AssProcessor::new().with_style(style);
-        self.process_request_translation(&mut processor, lines)?;
-        Ok(Box::new(processor))
     }
 
     pub fn prepare_processor(
         &self,
         lines: &mut Vec<String>,
     ) -> AssRes<Box<dyn SubtitleProcessor<Error = ParserError>>> {
-        match self.view.request_format().as_str() {
-            "1" => self.setup_ass_file(lines),
-            _ => Ok(Box::new(AssProcessor::new())),
+        let mut processor = AssProcessor::new().with_style(self.config.style.clone());
+        processor.with_translation(self.config.translation_enabled);
+
+        if self.config.translation_enabled {
+            self.process_translation(&mut processor, lines)?;
         }
+
+        Ok(Box::new(processor))
+    }
+
+    fn read_source_files(&self) -> AssRes<(Vec<String>, Vec<String>)> {
+        let lines_a = FileReader::new(&self.config.path_a).read_lines()?;
+        let lines_b = FileReader::new(&self.config.path_b).read_lines()?;
+        Ok((lines_a, lines_b))
+    }
+
+    fn execute_processing(
+        &self,
+        lines_a: &mut Vec<String>,
+        lines_b: &[String],
+    ) -> AssRes<Vec<String>> {
+        let mut processor = self.prepare_processor(lines_a)?;
+        self.view.display_status(AppStatus::Processing);
+        Ok(processor.process(lines_a, lines_b)?)
+    }
+
+    fn save_output(&self, final_result: &[String]) -> AssRes<()> {
+        self.view.display_status(AppStatus::Writing);
+        FileWriter::new(&self.config.output_path).write_lines(final_result)?;
+        Ok(())
+    }
+
+    fn execute_workflow(&mut self) -> AssRes<f64> {
+        self.view.display_status(AppStatus::Reading);
+        let (mut lines_a, lines_b) = self.read_source_files()?;
+        let start_time = Instant::now();
+        let final_result = self.execute_processing(&mut lines_a, &lines_b)?;
+        self.save_output(&final_result)?;
+        Ok(start_time.elapsed().as_secs_f64())
     }
 
     pub fn run(&mut self) {
-        let result: AssRes<()> = (|| {
-            self.view.reading_step();
-            let mut lines_a = self.reader_a.read_lines()?;
-            let lines_b = self.reader_b.read_lines()?;
-            let mut processor = self.prepare_processor(&mut lines_a)?;
-            let start_time = Instant::now();
-            self.view.processing_step();
-            let final_result = processor.process(&mut lines_a, &lines_b)?;
-            self.view.writing_step();
-            self.writer.write_lines(&final_result)?;
-            self.view.show_success(start_time.elapsed().as_secs_f64());
-            Ok(())
-        })();
-
-        if let Err(e) = result {
-            self.view.show_error(&e.to_string());
+        match self.execute_workflow() {
+            Ok(elapsed) => self.view.display_success(elapsed),
+            Err(e) => self.view.display_error(&e.to_string()),
         }
     }
 }

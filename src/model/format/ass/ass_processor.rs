@@ -67,11 +67,7 @@ impl AssProcessor {
         applier.run(lines, &translated_lines)
     }
 
-    fn execute(
-        &mut self,
-        lines_a: &mut Vec<String>,
-        lines_b: &Vec<String>,
-    ) -> ParseRes<Vec<String>> {
+    fn execute(&mut self, lines_a: &mut Vec<String>, lines_b: &[String]) -> ParseRes<Vec<String>> {
         let mut cleaner = Cleaner::new();
         let sorter = Sorter::new();
         let mut synchronizer = Synchronizer::new();
@@ -108,7 +104,7 @@ impl SubtitleProcessor for AssProcessor {
     fn process(
         &mut self,
         lines_a: &mut Vec<String>,
-        lines_b: &Vec<String>,
+        lines_b: &[String],
     ) -> ProcRes<Vec<String>, Self::Error> {
         self.execute(lines_a, lines_b)
     }
