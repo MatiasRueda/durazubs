@@ -19,5 +19,5 @@ pub trait SubtitleProcessor {
 
     fn translate_internal(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error>;
 
-    fn apply_style(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error>;
+    fn apply_style(&mut self, lines: &Vec<String>) -> ProcRes<Vec<String>, Self::Error>;
 }

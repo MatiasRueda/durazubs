@@ -66,7 +66,7 @@ impl SubtitleProcessor for AssProcessor {
         Ok(self.apply_translation(lines, translations)?)
     }
 
-    fn apply_style(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+    fn apply_style(&mut self, lines: &Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
         let style = self.style_type.as_ref().unwrap_or(&StyleType::Main);
         Stylist::new(style).run(lines)
     }
