@@ -8,6 +8,29 @@ impl Console {
         Self
     }
 
+    fn show_app_description(&self) {
+        println!("\n┌──────────────────────────────────────────────────┐");
+        println!("│                PROCESSOR WORKFLOW                │");
+        println!("├──────────────────────────────────────────────────┤");
+        println!("│ 1. SYNCHRONIZATION:                              │");
+        println!("│    Merges TIMESTAMPS (File A) with TEXTS         │");
+        println!("│    (File B) to create a perfectly synced file.   │");
+        println!("│                                                  │");
+        println!("│ 2. TRANSLATION ENGINE (Optional):                │");
+        println!("│    Ideal for Blu-Ray extended scenes. AI will    │");
+        println!("│    translate lines that exist in 'A' but are     │");
+        println!("│    missing in 'B' (Local or External AI).        │");
+        println!("│                                                  │");
+        println!("│ 3. STYLE PROFILES (Optional):                    │");
+        println!("│    Apply custom visual formats, fonts, and       │");
+        println!("│    styles to the final output subtitles.         │");
+        println!("│                                                  │");
+        println!("│ 4. SUBTITLE CONSOLIDATION:                       │");
+        println!("│    Integrates all layers and transformations     │");
+        println!("│    into a single production-ready .ass file.     │");
+        println!("└──────────────────────────────────────────────────┘\n")
+    }
+
     fn read_input(&self) -> String {
         io::stdout().flush().unwrap();
         let mut input_string = String::new();
@@ -53,6 +76,7 @@ impl View for Console {
                 println!("\n┌──────────────────────────────────────────────────┐");
                 println!("│         DURAZUBS SUBTITLE PROCESSOR v1.0         │");
                 println!("└──────────────────────────────────────────────────┘");
+                self.show_app_description();
             }
             AppStatus::Reading => println!("\n[   START    ] Initializing file streams..."),
             AppStatus::Processing => println!("[    WORK    ] Synchronizing subtitle layers..."),
