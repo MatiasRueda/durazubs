@@ -24,8 +24,8 @@ impl From<ParserError> for AssError {
 impl Display for AssError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
-            AssError::Repository(repo_err) => write!(f, "Repository failure: {}", repo_err),
-            AssError::Parser(parser_err) => write!(f, "Structure failure: {}", parser_err),
+            AssError::Repository(repo_err) => write!(f, "{}", repo_err),
+            AssError::Parser(parser_err) => write!(f, "{}", parser_err),
         }
     }
 }
