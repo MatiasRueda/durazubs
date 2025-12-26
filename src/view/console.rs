@@ -27,8 +27,8 @@ impl Console {
         println!("│                                                  │");
         println!("│ 4. SUBTITLE CONSOLIDATION:                       │");
         println!("│    Integrates all layers and transformations     │");
-        println!("│    into a single production-ready .ass file.     │");
-        println!("└──────────────────────────────────────────────────┘\n")
+        println!("│    into a single production-ready output file.   │");
+        println!("└──────────────────────────────────────────────────┘")
     }
 
     fn read_input(&self) -> String {
@@ -56,20 +56,49 @@ impl Console {
             println!("  '{}' is not valid.", input);
         }
     }
+}
 
-    fn request_path(&self, label: &str) -> String {
+impl View for Console {
+    fn get_format(&self) -> String {
+        match self.select_option("Format", &["ASS", "SRT"]).as_str() {
+            "1" => "ass".to_string(),
+            _ => "srt".to_string(),
+        }
+    }
+
+    fn request_path_a(&self, ext: &str) -> String {
         loop {
-            print!("❯ Enter path for {} (e.g. 'input'): ", label);
+            print!("❯ Enter path for file A (Timestamps): ");
+            let name = self.read_input();
+            if !name.is_empty() {
+                return format!("{}.{}", name, ext);
+            }
+            println!("  [!] Required field. Please enter the name for file A.");
+        }
+    }
+
+    fn request_path_b(&self, ext: &str) -> String {
+        loop {
+            print!("❯ Enter path for file B (Texts): ");
+            let name = self.read_input();
+            if !name.is_empty() {
+                return format!("{}.{}", name, ext);
+            }
+            println!("  [!] Required field. Please enter the name for file B.");
+        }
+    }
+
+    fn request_output_path(&self) -> String {
+        loop {
+            print!("❯ Enter path for result file: ");
             let name = self.read_input();
             if !name.is_empty() {
                 return format!("{}.ass", name);
             }
-            println!("  Required field.");
+            println!("  [!] Required field. Please enter a name for the output.");
         }
     }
-}
 
-impl View for Console {
     fn display_status(&self, status: AppStatus) {
         match status {
             AppStatus::Welcome => {
@@ -93,33 +122,24 @@ impl View for Console {
         }
     }
 
-    fn get_config(&self) -> AppConfig {
-        let path_a = self.request_path("file A");
-        let path_b = self.request_path("file B");
-        let output_path = self.request_path("RESULT file");
-        let format_type = self.select_option("Format", &["ASS", "SRT"]);
-
+    fn get_options(&self, ext: &str) -> AppOptions {
+        let output_path = self.request_output_path();
         let mut translation_enabled = false;
         let mut ai_type = None;
-
         print!("\n❯ Enable translation engine? (y/n): ");
         if self.read_input().to_lowercase() == "y" {
             translation_enabled = true;
             ai_type =
                 Some(self.select_option("Translation Engine Type", &["Local AI", "External AI"]));
         }
-
         let mut style = None;
         print!("\n❯ Apply custom styling? (y/n): ");
         if self.read_input().to_lowercase() == "y" {
             style = Some(self.select_option("Style Profile", &["Main", "Second"]));
         }
-
-        AppConfig {
-            path_a,
-            path_b,
+        AppOptions {
             output_path,
-            format_type,
+            format_type: ext.to_string(),
             style,
             translation_enabled,
             ai_type,

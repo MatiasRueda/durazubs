@@ -12,18 +12,31 @@ pub enum AppStatus {
     Success,
 }
 
-pub struct AppConfig {
+pub struct AppPaths {
     pub path_a: String,
     pub path_b: String,
+}
+
+pub struct AppOptions {
     pub output_path: String,
     pub format_type: String,
     pub style: Option<String>,
     pub translation_enabled: bool,
     pub ai_type: Option<String>,
 }
+
+pub struct AppConfig {
+    pub paths: AppPaths,
+    pub options: AppOptions,
+}
+
 pub trait View {
+    fn get_format(&self) -> String;
+    fn request_path_a(&self, ext: &str) -> String;
+    fn request_path_b(&self, ext: &str) -> String;
+    fn request_output_path(&self) -> String;
     fn display_status(&self, status: AppStatus);
     fn display_error(&self, message: &str);
-    fn get_config(&self) -> AppConfig;
+    fn get_options(&self, ext: &str) -> AppOptions;
     fn confirm_translation_ready(&self) -> bool;
 }

@@ -1,5 +1,7 @@
+use std::path::Path;
+
 use crate::model::repository::SubtitleRepository;
-use crate::model::repository::repository_error::RepoRes;
+use crate::model::repository::repository_error::{RepoRes, RepositoryError};
 
 pub struct SubtitlePersistence<R: SubtitleRepository> {
     repository: R,
@@ -11,6 +13,21 @@ impl<R: SubtitleRepository> SubtitlePersistence<R> {
 
     pub fn new(repository: R) -> Self {
         Self { repository }
+    }
+
+    pub fn check_availability(&self, path: &str) -> RepoRes<()> {
+        let p = Path::new(path);
+        if !p.exists() {
+            return Err(RepositoryError::SourceNotFound {
+                context: path.to_string(),
+            });
+        }
+        if !p.is_file() {
+            return Err(RepositoryError::ReadError {
+                context: format!("{} is not a file", path),
+            });
+        }
+        Ok(())
     }
 
     pub fn load_translations(&self) -> RepoRes<Vec<String>> {

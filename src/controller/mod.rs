@@ -7,7 +7,7 @@ use crate::{
         subtitle_persistence::SubtitlePersistence,
         subtitle_processor::SubtitleProcessor,
     },
-    view::{AppConfig, AppStatus, View},
+    view::{AppConfig, AppPaths, AppStatus, View},
 };
 
 pub struct App<V: View, R: SubtitleRepository> {
@@ -19,8 +19,29 @@ pub struct App<V: View, R: SubtitleRepository> {
 impl<V: View, R: SubtitleRepository> App<V, R> {
     pub fn new(view: V, repository: R) -> Self {
         view.display_status(AppStatus::Welcome);
-        let config = view.get_config();
         let persistence = SubtitlePersistence::new(repository);
+        let extension = view.get_format();
+        let path_a = loop {
+            let p = view.request_path_a(&extension);
+            if let Err(e) = persistence.check_availability(&p) {
+                view.display_error(&e.to_string());
+            } else {
+                break p;
+            }
+        };
+        let path_b = loop {
+            let p = view.request_path_b(&extension);
+            if let Err(e) = persistence.check_availability(&p) {
+                view.display_error(&e.to_string());
+            } else {
+                break p;
+            }
+        };
+        let options = view.get_options(&extension);
+        let config = AppConfig {
+            paths: AppPaths { path_a, path_b },
+            options,
+        };
         Self {
             view,
             persistence,
@@ -58,10 +79,11 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
 
     fn step_read_files(&self) -> AssRes<(Vec<String>, Vec<String>)> {
         self.view.display_status(AppStatus::Reading);
-        let lines_a = self.persistence.load_subtitles(&self.config.path_a)?;
-        let lines_b = self.persistence.load_subtitles(&self.config.path_b)?;
+        let lines_a = self.persistence.load_subtitles(&self.config.paths.path_a)?;
+        let lines_b = self.persistence.load_subtitles(&self.config.paths.path_b)?;
         Ok((lines_a, lines_b))
     }
+
     fn step_synchronize(
         &self,
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
@@ -77,9 +99,9 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
         lines: &mut Vec<String>,
     ) -> AssRes<Vec<String>> {
-        if self.config.translation_enabled {
+        if self.config.options.translation_enabled {
             self.view.display_status(AppStatus::Translating);
-            match &self.config.ai_type {
+            match &self.config.options.ai_type {
                 Some(choice) if choice == "1" => Ok(processor.translate_internal(lines)?),
                 Some(_) => {
                     let to_translate = processor.get_lines_to_translate(lines)?;
@@ -94,12 +116,13 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
             Ok(lines.clone())
         }
     }
+
     fn step_style(
         &self,
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
         lines: &mut Vec<String>,
     ) -> AssRes<Vec<String>> {
-        match self.config.style {
+        match &self.config.options.style {
             Some(_) => {
                 self.view.display_status(AppStatus::Styling);
                 Ok(processor.apply_style(lines)?)
@@ -111,16 +134,16 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
     fn execute_workflow(&mut self) -> AssRes<()> {
         let (mut lines_a, lines_b) = self.step_read_files()?;
         let mut processor: Box<dyn SubtitleProcessor<Error = ParserError>> =
-            Box::new(AssProcessor::new().with_style(self.config.style.clone()));
+            Box::new(AssProcessor::new().with_style(self.config.options.style.clone()));
         let mut current_lines = self.step_synchronize(&mut processor, &mut lines_a, &lines_b)?;
         current_lines = self.step_translate(&mut processor, &mut current_lines)?;
         current_lines = self.step_style(&mut processor, &mut current_lines)?;
         self.view.display_status(AppStatus::Writing);
         self.persistence
-            .save_subtitles(&self.config.output_path, &current_lines)?;
+            .save_subtitles(&self.config.options.output_path, &current_lines)?;
+
         Ok(())
     }
-
     pub fn run(&mut self) {
         match self.execute_workflow() {
             Ok(()) => self.view.display_status(AppStatus::Success),
