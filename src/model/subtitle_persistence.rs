@@ -38,11 +38,11 @@ impl<R: SubtitleRepository> SubtitlePersistence<R> {
         self.repository.save(Self::TO_TRANSLATE_PATH, lines)
     }
 
-    pub fn load_subtitles(&self, path: &str) -> RepoRes<Vec<String>> {
+    pub fn load_subs(&self, path: &str) -> RepoRes<Vec<String>> {
         self.repository.get_all(path)
     }
 
-    pub fn save_subtitles(&self, path: &str, lines: &[String]) -> RepoRes<()> {
+    pub fn save_subs(&self, path: &str, lines: &[String]) -> RepoRes<()> {
         self.repository.save(path, lines)
     }
 }

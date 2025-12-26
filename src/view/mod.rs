@@ -3,11 +3,13 @@ pub mod console;
 pub enum AppStatus {
     Welcome,
     Reading,
+    ReadingA,
+    ReadingB,
     Processing,
     Translating,
     Styling,
     Writing,
-    InstructionsForTranslation,
+    AskTranslation,
     TranslationFileFound,
     Success,
 }

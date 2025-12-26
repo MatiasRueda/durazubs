@@ -68,7 +68,7 @@ impl View for Console {
 
     fn request_path_a(&self, ext: &str) -> String {
         loop {
-            print!("❯ Enter path for file A (Timestamps): ");
+            print!("\n❯ Enter path for file A (Timestamps): ");
             let name = self.read_input();
             if !name.is_empty() {
                 return format!("{}.{}", name, ext);
@@ -108,12 +108,18 @@ impl View for Console {
                 self.show_app_description();
             }
             AppStatus::Reading => println!("\n[   START    ] Initializing file streams..."),
+            AppStatus::ReadingA => {
+                println!("[    READ    ] Extracting TIMESTAMPS from Source (A)...")
+            }
+            AppStatus::ReadingB => {
+                println!("[    READ    ] Extracting DIALOGUE TEXTS from Source (B)...")
+            }
             AppStatus::Processing => println!("[    WORK    ] Synchronizing subtitle layers..."),
             AppStatus::Translating => println!("[ TRANSLATE  ] Running translation engine..."),
             AppStatus::Styling => println!("[   STYLE    ] Applying visual profiles..."),
             AppStatus::Writing => println!("[   EXPORT   ] Saving output to disk..."),
-            AppStatus::InstructionsForTranslation => {
-                println!("[  AI-TASK   ] Process via AI and save as 'translations.txt'.")
+            AppStatus::AskTranslation => {
+                println!("[  AI-TASK   ] Process via AI and save as 'translations.txt'.\n")
             }
             AppStatus::TranslationFileFound => {
                 println!("\n[     OK     ] 'translations.txt' found and loaded successfully.")
@@ -147,7 +153,7 @@ impl View for Console {
     }
 
     fn confirm_translation_ready(&self) -> bool {
-        print!("\n  Press Enter to sync with 'translations.txt' (or 'n' to cancel)...");
+        print!("  Press Enter to sync with 'translations.txt' (or 'n' to cancel)...");
         self.read_input().to_lowercase() != "n"
     }
 
