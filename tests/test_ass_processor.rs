@@ -95,8 +95,8 @@ mod tests {
         expected_output: &[
             "Act as an expert anime translator. You will process a block of subtitles from ENGLISH to NEUTRAL LATIN AMERICAN SPANISH.",
             "---",
-            "First extra",
             "Second extra",
+            "First extra",
         ],
     };
 

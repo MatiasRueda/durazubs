@@ -47,14 +47,8 @@ impl SubtitleProcessor for AssProcessor {
         Synchronizer::new().run(&sorted, l_b)
     }
 
-    fn get_additional_scenes(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
-        Cleaner::new().run(lines)?;
-        let ordered = Sorter::new().run(lines)?;
-        Ok(SceneExtractor::new().run(&ordered)?)
-    }
-
     fn get_lines_to_translate(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
-        let additional_scenes = self.get_additional_scenes(lines)?;
+        let additional_scenes = SceneExtractor::new().run(&lines)?;
         Ok(Instructor::new().run(&additional_scenes))
     }
 
@@ -67,7 +61,7 @@ impl SubtitleProcessor for AssProcessor {
     }
 
     fn translate_internal(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
-        let to_translate = self.get_additional_scenes(lines)?;
+        let to_translate = SceneExtractor::new().run(&lines)?;
         let translations = Translator::new().run(&to_translate);
         Ok(self.apply_translation(lines, translations)?)
     }
