@@ -1,16 +1,17 @@
 use std::fmt::{Display, Formatter, Result};
 
-use crate::model::{format::ass::parser::parser_error::ParserError, io::io_error::IOError};
+use crate::model::format::ass::parser::parser_error::ParserError;
+use crate::model::repository::repository_error::RepositoryError;
 
 #[derive(Debug)]
 pub enum AssError {
-    Io(IOError),
+    Repository(RepositoryError),
     Parser(ParserError),
 }
 
-impl From<IOError> for AssError {
-    fn from(err: IOError) -> Self {
-        AssError::Io(err)
+impl From<RepositoryError> for AssError {
+    fn from(err: RepositoryError) -> Self {
+        AssError::Repository(err)
     }
 }
 
@@ -23,8 +24,8 @@ impl From<ParserError> for AssError {
 impl Display for AssError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
-            AssError::Io(io_err) => write!(f, "{}", io_err),
-            AssError::Parser(parser_err) => write!(f, "{}", parser_err),
+            AssError::Repository(repo_err) => write!(f, "Repository failure: {}", repo_err),
+            AssError::Parser(parser_err) => write!(f, "Structure failure: {}", parser_err),
         }
     }
 }

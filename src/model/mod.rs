@@ -1,7 +1,6 @@
 pub mod format;
-pub mod io;
 pub mod line;
-pub mod reader;
+pub mod repository;
+pub mod subtitle_persistence;
 pub mod subtitle_processor;
 pub mod translator;
-pub mod writer;

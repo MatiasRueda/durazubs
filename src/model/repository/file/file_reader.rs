@@ -1,7 +1,7 @@
-use crate::model::io::io_error::IOError;
-use crate::model::reader::Reader;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+
+use crate::model::repository::repository_error::{RepoRes, RepositoryError};
 
 pub struct FileReader {
     path: String,
@@ -13,11 +13,9 @@ impl FileReader {
             path: path.to_string(),
         }
     }
-}
 
-impl Reader for FileReader {
-    fn read_lines(&self) -> std::result::Result<Vec<String>, IOError> {
-        let file = File::open(&self.path).map_err(|_| IOError::ReadError {
+    pub fn read_lines(&self) -> RepoRes<Vec<String>> {
+        let file = File::open(&self.path).map_err(|_| RepositoryError::SourceNotFound {
             context: self.path.clone(),
         })?;
 
@@ -25,7 +23,7 @@ impl Reader for FileReader {
         reader
             .lines()
             .collect::<std::io::Result<Vec<String>>>()
-            .map_err(|_| IOError::ReadError {
+            .map_err(|_| RepositoryError::ReadError {
                 context: self.path.clone(),
             })
     }

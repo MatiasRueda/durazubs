@@ -5,38 +5,38 @@ use crate::{
         format::ass::{
             ass_error::AssRes, ass_processor::AssProcessor, parser::parser_error::ParserError,
         },
-        io::file::{file_reader::FileReader, file_writer::FileWriter},
-        reader::Reader,
+        repository::SubtitleRepository,
+        subtitle_persistence::SubtitlePersistence,
         subtitle_processor::SubtitleProcessor,
-        writer::Writer,
     },
     view::{AppConfig, AppStatus, View},
 };
 
-pub struct App<V: View> {
+pub struct App<V: View, R: SubtitleRepository> {
     view: V,
+    persistence: SubtitlePersistence<R>,
     config: AppConfig,
 }
 
-impl<V: View> App<V> {
-    const TRANSLATIONS_PATH: &str = "translations.txt";
-
-    pub fn new(view: V) -> Self {
+impl<V: View, R: SubtitleRepository> App<V, R> {
+    pub fn new(view: V, repository: R) -> Self {
         view.display_status(AppStatus::Welcome);
         let config = view.get_config();
-        Self { view, config }
-    }
-
-    fn handle_translation_error(&self) -> Option<Vec<String>> {
-        self.view
-            .display_error(&format!("Source '{}' not found.", Self::TRANSLATIONS_PATH));
-        None
+        let persistence = SubtitlePersistence::new(repository);
+        Self {
+            view,
+            persistence,
+            config,
+        }
     }
 
     fn try_read_translations(&self) -> Option<Vec<String>> {
-        match FileReader::new(Self::TRANSLATIONS_PATH).read_lines() {
+        match self.persistence.load_translations() {
             Ok(lines) => Some(lines),
-            Err(_) => self.handle_translation_error(),
+            Err(e) => {
+                self.view.display_error(&e.to_string());
+                None
+            }
         }
     }
 
@@ -57,8 +57,8 @@ impl<V: View> App<V> {
 
     fn step_read_files(&self) -> AssRes<(Vec<String>, Vec<String>)> {
         self.view.display_status(AppStatus::Reading);
-        let lines_a = FileReader::new(&self.config.path_a).read_lines()?;
-        let lines_b = FileReader::new(&self.config.path_b).read_lines()?;
+        let lines_a = self.persistence.load_subtitles(&self.config.path_a)?;
+        let lines_b = self.persistence.load_subtitles(&self.config.path_b)?;
         Ok((lines_a, lines_b))
     }
 
@@ -77,16 +77,15 @@ impl<V: View> App<V> {
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
         lines: &mut Vec<String>,
     ) -> AssRes<Vec<String>> {
-        match self.config.translation_enabled {
-            true => {
-                let to_translate = processor.get_lines_to_translate(lines)?;
-                FileWriter::new("to_translate.txt").write_lines(&to_translate)?;
+        if self.config.translation_enabled {
+            let to_translate = processor.get_lines_to_translate(lines)?;
+            self.persistence
+                .save_translation_to_translate(&to_translate)?;
 
-                let translations = self.read_translations();
-                Ok(processor.apply_translation(lines, translations)?)
-            }
-            false => Ok(lines.clone()),
+            let translations = self.read_translations();
+            return Ok(processor.apply_translation(lines, translations)?);
         }
+        Ok(lines.clone())
     }
 
     fn step_style(
@@ -108,10 +107,9 @@ impl<V: View> App<V> {
         let mut current_lines = self.step_synchronize(&mut processor, &mut lines_a, &lines_b)?;
         current_lines = self.step_translate(&mut processor, &mut current_lines)?;
         current_lines = self.step_style(&mut processor, &mut current_lines)?;
-
         self.view.display_status(AppStatus::Writing);
-        FileWriter::new(&self.config.output_path).write_lines(&current_lines)?;
-
+        self.persistence
+            .save_subtitles(&self.config.output_path, &current_lines)?;
         Ok(start_time.elapsed().as_secs_f64())
     }
 
