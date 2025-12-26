@@ -77,15 +77,17 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
         lines: &mut Vec<String>,
     ) -> AssRes<Vec<String>> {
-        if self.config.translation_enabled {
-            let to_translate = processor.get_lines_to_translate(lines)?;
-            self.persistence
-                .save_translation_to_translate(&to_translate)?;
-
-            let translations = self.read_translations();
-            return Ok(processor.apply_translation(lines, translations)?);
+        match &self.config.ai_type {
+            Some(choice) if choice == "1" => Ok(processor.translate_internal(lines)?),
+            Some(_) => {
+                let to_translate = processor.get_lines_to_translate(lines)?;
+                self.persistence
+                    .save_translation_to_translate(&to_translate)?;
+                let translations = self.read_translations();
+                Ok(processor.apply_translation(lines, translations)?)
+            }
+            None => Ok(lines.clone()),
         }
-        Ok(lines.clone())
     }
 
     fn step_style(

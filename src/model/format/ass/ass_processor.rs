@@ -9,7 +9,7 @@ use crate::model::{
         synchronizer::Synchronizer,
     },
     subtitle_processor::{ProcRes, SubtitleProcessor},
-    translator::instructor::Instructor,
+    translator::{instructor::Instructor, translator::Translator},
 };
 
 pub struct AssProcessor {
@@ -47,11 +47,15 @@ impl SubtitleProcessor for AssProcessor {
         Synchronizer::new().run(&sorted, l_b)
     }
 
-    fn get_lines_to_translate(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+    fn get_additional_scenes(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
         Cleaner::new().run(lines)?;
         let ordered = Sorter::new().run(lines)?;
-        let scenes = SceneExtractor::new().run(&ordered)?;
-        Ok(Instructor::new().run(&scenes))
+        Ok(SceneExtractor::new().run(&ordered)?)
+    }
+
+    fn get_lines_to_translate(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+        let additional_scenes = self.get_additional_scenes(lines)?;
+        Ok(Instructor::new().run(&additional_scenes))
     }
 
     fn apply_translation(
@@ -60,6 +64,12 @@ impl SubtitleProcessor for AssProcessor {
         translations: Vec<String>,
     ) -> ProcRes<Vec<String>, Self::Error> {
         SceneApplier::new().run(lines, &translations)
+    }
+
+    fn translate_internal(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+        let to_translate = self.get_additional_scenes(lines)?;
+        let translations = Translator::new().run(&to_translate);
+        Ok(self.apply_translation(lines, translations)?)
     }
 
     fn apply_style(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {

@@ -15,6 +15,7 @@ pub struct AppConfig {
     pub format_type: String,
     pub style: Option<String>,
     pub translation_enabled: bool,
+    pub ai_type: Option<String>,
 }
 pub trait View {
     fn display_status(&self, status: AppStatus);

@@ -9,6 +9,8 @@ pub trait SubtitleProcessor {
         l_b: &[String],
     ) -> ProcRes<Vec<String>, Self::Error>;
 
+    fn get_additional_scenes(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error>;
+
     fn get_lines_to_translate(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error>;
 
     fn apply_translation(
@@ -16,6 +18,8 @@ pub trait SubtitleProcessor {
         lines: &mut Vec<String>,
         translations: Vec<String>,
     ) -> ProcRes<Vec<String>, Self::Error>;
+
+    fn translate_internal(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error>;
 
     fn apply_style(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error>;
 }

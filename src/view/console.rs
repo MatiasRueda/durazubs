@@ -75,8 +75,15 @@ impl View for Console {
             style = Some(self.select_option("Style Profile", &["Main", "Second"]));
         }
 
+        let mut translation_enabled = false;
+        let mut ai_type = None;
+
         print!("❯ Enable translation engine? (y/n): ");
-        let translation_enabled = self.read_input().to_lowercase() == "y";
+        if self.read_input().to_lowercase() == "y" {
+            translation_enabled = true;
+            ai_type =
+                Some(self.select_option("Translation Engine Type", &["Local AI", "External AI"]));
+        }
 
         AppConfig {
             path_a,
@@ -85,6 +92,7 @@ impl View for Console {
             format_type,
             style,
             translation_enabled,
+            ai_type,
         }
     }
 
