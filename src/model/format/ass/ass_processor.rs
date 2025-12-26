@@ -37,14 +37,8 @@ impl AssProcessor {
 impl SubtitleProcessor for AssProcessor {
     type Error = ParserError;
 
-    fn synchronize(
-        &mut self,
-        l_a: &mut Vec<String>,
-        l_b: &[String],
-    ) -> ProcRes<Vec<String>, Self::Error> {
-        Cleaner::new().run(l_a)?;
-        let sorted = Sorter::new().run(l_a)?;
-        Synchronizer::new().run(&sorted, l_b)
+    fn synchronize(&self, l_a: &[String], l_b: &[String]) -> ProcRes<Vec<String>, Self::Error> {
+        Synchronizer::new().run(l_a, l_b)
     }
 
     fn get_lines_to_translate(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
@@ -53,21 +47,31 @@ impl SubtitleProcessor for AssProcessor {
     }
 
     fn apply_translation(
-        &mut self,
+        &self,
         lines: &mut Vec<String>,
-        translations: Vec<String>,
+        translations: &[String],
     ) -> ProcRes<Vec<String>, Self::Error> {
         SceneApplier::new().run(lines, &translations)
     }
 
-    fn translate_internal(&mut self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+    fn translate_internal(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
         let to_translate = SceneExtractor::new().run(&lines)?;
         let translations = Translator::new().run(&to_translate);
-        Ok(self.apply_translation(lines, translations)?)
+        Ok(self.apply_translation(lines, &translations)?)
     }
 
-    fn apply_style(&mut self, lines: &Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+    fn apply_style(&self, lines: &Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
         let style = self.style_type.as_ref().unwrap_or(&StyleType::Main);
         Stylist::new(style).run(lines)
+    }
+
+    fn preprocessing(&self, lines: &mut Vec<String>) -> ProcRes<Vec<String>, Self::Error> {
+        Cleaner::new().run(lines)?;
+        Ok(Sorter::new().run(lines)?)
+    }
+
+    fn has_additional_scene(&self, lines: &Vec<String>) -> ProcRes<bool, Self::Error> {
+        let additional_scenes = SceneExtractor::new().run(lines)?;
+        Ok(additional_scenes.len() != 0)
     }
 }

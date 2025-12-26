@@ -48,6 +48,7 @@ impl Console {
             }
             print!("  Select choice [1-{}]: ", options.len());
             let input = self.read_input();
+            print!("\n");
             if let Ok(val) = input.parse::<usize>() {
                 if val > 0 && val <= options.len() {
                     return input;
@@ -68,7 +69,7 @@ impl View for Console {
 
     fn request_path_a(&self, ext: &str) -> String {
         loop {
-            print!("\n❯ Enter path for file A (Timestamps): ");
+            print!("❯ Enter path for file A (Timestamps): ");
             let name = self.read_input();
             if !name.is_empty() {
                 return format!("{}.{}", name, ext);
@@ -107,15 +108,21 @@ impl View for Console {
                 println!("└──────────────────────────────────────────────────┘");
                 self.show_app_description();
             }
-            AppStatus::Reading => println!("\n[   START    ] Initializing file streams..."),
+            AppStatus::Reading => println!("[   START    ] Initializing file streams..."),
             AppStatus::ReadingA => {
                 println!("[    READ    ] Extracting TIMESTAMPS from Source (A)...")
             }
             AppStatus::ReadingB => {
                 println!("[    READ    ] Extracting DIALOGUE TEXTS from Source (B)...")
             }
+            AppStatus::Preprocessing => {
+                println!("[    CLEAN   ] Sorting and normalizing Source (A) timestamps...")
+            }
             AppStatus::Processing => println!("[    WORK    ] Synchronizing subtitle layers..."),
             AppStatus::Translating => println!("[ TRANSLATE  ] Running translation engine..."),
+            AppStatus::NoLinesToTranslate => {
+                println!("[    INFO    ] No missing lines detected; skipping translation step.")
+            }
             AppStatus::Styling => println!("[   STYLE    ] Applying visual profiles..."),
             AppStatus::Writing => println!("[   EXPORT   ] Saving output to disk..."),
             AppStatus::AskTranslation => {
@@ -139,7 +146,7 @@ impl View for Console {
                 Some(self.select_option("Translation Engine Type", &["Local AI", "External AI"]));
         }
         let mut style = None;
-        print!("\n❯ Apply custom styling? (y/n): ");
+        print!("❯ Apply custom styling? (y/n): ");
         if self.read_input().to_lowercase() == "y" {
             style = Some(self.select_option("Style Profile", &["Main", "Second"]));
         }

@@ -94,10 +94,16 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         Ok(self.persistence.load_subs(&self.config.paths.path_b)?)
     }
 
+    fn step_preprocessing(&self, p: &mut Processor, lines: &mut Vec<String>) -> AssRes<()> {
+        self.view.display_status(AppStatus::Preprocessing);
+        *lines = p.preprocessing(lines)?;
+        Ok(())
+    }
+
     fn step_synchronize(
         &self,
         processor: &mut Processor,
-        l_a: &mut Vec<String>,
+        l_a: &[String],
         l_b: &[String],
     ) -> AssRes<Vec<String>> {
         self.view.display_status(AppStatus::Processing);
@@ -107,6 +113,10 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
     fn step_translate(&self, p: &mut Processor, lines: &mut Vec<String>) -> AssRes<()> {
         let opt = &self.config.options;
         if !opt.translation_enabled {
+            return Ok(());
+        }
+        if !p.has_additional_scene(lines)? {
+            self.view.display_status(AppStatus::NoLinesToTranslate);
             return Ok(());
         }
         self.view.display_status(AppStatus::Translating);
@@ -125,7 +135,7 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         let to_tr = p.get_lines_to_translate(lines)?;
         self.persistence.save_translation_to_translate(&to_tr)?;
         let translations = self.read_translations();
-        *lines = p.apply_translation(lines, translations)?;
+        *lines = p.apply_translation(lines, &translations)?;
         Ok(())
     }
 
@@ -149,7 +159,8 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         let lines_b = self.step_read_b()?;
         let style_name = self.config.options.style.clone();
         let mut processor: Processor = Box::new(AssProcessor::new().with_style(style_name));
-        let mut current_lines = self.step_synchronize(&mut processor, &mut lines_a, &lines_b)?;
+        self.step_preprocessing(&mut processor, &mut lines_a)?;
+        let mut current_lines = self.step_synchronize(&mut processor, &lines_a, &lines_b)?;
         self.step_translate(&mut processor, &mut current_lines)?;
         self.step_style(&mut processor, &mut current_lines)?;
         self.view.display_status(AppStatus::Writing);

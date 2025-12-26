@@ -101,7 +101,7 @@ mod tests {
     };
 
     fn run_test_case(test_case: &TestCase) -> ParseRes<Vec<String>> {
-        let mut proc = AssProcessor::new();
+        let proc = AssProcessor::new();
         let mut lines_a: Vec<String> = test_case.input_a.iter().map(|s| s.to_string()).collect();
         let lines_b: Vec<String> = test_case.input_b.iter().map(|s| s.to_string()).collect();
         proc.synchronize(&mut lines_a, &lines_b)
@@ -122,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_generic_synchronization_logic() -> ParseRes<()> {
-        let mut proc = AssProcessor::new();
+        let proc = AssProcessor::new();
         let mut lines_a: Vec<String> = SYNC_CASE.input_a.iter().map(|s| s.to_string()).collect();
         let lines_b: Vec<String> = SYNC_CASE.input_b.iter().map(|s| s.to_string()).collect();
         let synced = proc.synchronize(&mut lines_a, &lines_b)?;
