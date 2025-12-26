@@ -54,12 +54,18 @@ impl View for Console {
                 println!("│         DURAZUBS SUBTITLE PROCESSOR v1.0         │");
                 println!("└──────────────────────────────────────────────────┘");
             }
-            AppStatus::Reading => println!("[ START  ] Initializing file streams..."),
-            AppStatus::Processing => println!("[  WORK  ] Applying transformations..."),
-            AppStatus::Writing => println!("[ EXPORT ] Saving output to disk..."),
+            AppStatus::Reading => println!("\n[   START    ] Initializing file streams..."),
+            AppStatus::Processing => println!("[    WORK    ] Synchronizing subtitle layers..."),
+            AppStatus::Translating => println!("[ TRANSLATE  ] Running translation engine..."),
+            AppStatus::Styling => println!("[   STYLE    ] Applying visual profiles..."),
+            AppStatus::Writing => println!("[   EXPORT   ] Saving output to disk..."),
             AppStatus::InstructionsForTranslation => {
-                println!("\n[ AI EXPORT ] Process via AI and save as 'translations.txt'.");
+                println!("[  AI-TASK   ] Process via AI and save as 'translations.txt'.")
             }
+            AppStatus::TranslationFileFound => {
+                println!("\n[     OK     ] 'translations.txt' found and loaded successfully.")
+            }
+            AppStatus::Success => println!("[  SUCCESS   ] Process completed successfully!\n"),
         }
     }
 
@@ -69,20 +75,20 @@ impl View for Console {
         let output_path = self.request_path("RESULT file");
         let format_type = self.select_option("Format", &["ASS", "SRT"]);
 
-        let mut style = None;
-        print!("❯ Apply custom styling? (y/n): ");
-        if self.read_input().to_lowercase() == "y" {
-            style = Some(self.select_option("Style Profile", &["Main", "Second"]));
-        }
-
         let mut translation_enabled = false;
         let mut ai_type = None;
 
-        print!("❯ Enable translation engine? (y/n): ");
+        print!("\n❯ Enable translation engine? (y/n): ");
         if self.read_input().to_lowercase() == "y" {
             translation_enabled = true;
             ai_type =
                 Some(self.select_option("Translation Engine Type", &["Local AI", "External AI"]));
+        }
+
+        let mut style = None;
+        print!("\n❯ Apply custom styling? (y/n): ");
+        if self.read_input().to_lowercase() == "y" {
+            style = Some(self.select_option("Style Profile", &["Main", "Second"]));
         }
 
         AppConfig {
@@ -102,10 +108,6 @@ impl View for Console {
     }
 
     fn display_error(&self, message: &str) {
-        eprintln!("\n[!] ERROR: {}\n", message);
-    }
-
-    fn display_success(&self, seconds: f64) {
-        println!("\n[ SUCCESS ] Completed in {:.2}s\n", seconds);
+        eprintln!("\n[   ERROR    ] {}\n", message);
     }
 }

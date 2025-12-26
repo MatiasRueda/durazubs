@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use crate::{
     model::{
         format::ass::{
@@ -32,7 +30,10 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
 
     fn try_read_translations(&self) -> Option<Vec<String>> {
         match self.persistence.load_translations() {
-            Ok(lines) => Some(lines),
+            Ok(lines) => {
+                self.view.display_status(AppStatus::TranslationFileFound);
+                Some(lines)
+            }
             Err(e) => {
                 self.view.display_error(&e.to_string());
                 None
@@ -61,7 +62,6 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         let lines_b = self.persistence.load_subtitles(&self.config.path_b)?;
         Ok((lines_a, lines_b))
     }
-
     fn step_synchronize(
         &self,
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
@@ -77,47 +77,53 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
         lines: &mut Vec<String>,
     ) -> AssRes<Vec<String>> {
-        match &self.config.ai_type {
-            Some(choice) if choice == "1" => Ok(processor.translate_internal(lines)?),
-            Some(_) => {
-                let to_translate = processor.get_lines_to_translate(lines)?;
-                self.persistence
-                    .save_translation_to_translate(&to_translate)?;
-                let translations = self.read_translations();
-                Ok(processor.apply_translation(lines, translations)?)
+        if self.config.translation_enabled {
+            self.view.display_status(AppStatus::Translating);
+            match &self.config.ai_type {
+                Some(choice) if choice == "1" => Ok(processor.translate_internal(lines)?),
+                Some(_) => {
+                    let to_translate = processor.get_lines_to_translate(lines)?;
+                    self.persistence
+                        .save_translation_to_translate(&to_translate)?;
+                    let translations = self.read_translations();
+                    Ok(processor.apply_translation(lines, translations)?)
+                }
+                None => Ok(lines.clone()),
             }
-            None => Ok(lines.clone()),
+        } else {
+            Ok(lines.clone())
         }
     }
-
     fn step_style(
         &self,
         processor: &mut Box<dyn SubtitleProcessor<Error = ParserError>>,
         lines: &mut Vec<String>,
     ) -> AssRes<Vec<String>> {
         match self.config.style {
-            Some(_) => Ok(processor.apply_style(lines)?),
+            Some(_) => {
+                self.view.display_status(AppStatus::Styling);
+                Ok(processor.apply_style(lines)?)
+            }
             None => Ok(lines.clone()),
         }
     }
 
-    fn execute_workflow(&mut self) -> AssRes<f64> {
+    fn execute_workflow(&mut self) -> AssRes<()> {
         let (mut lines_a, lines_b) = self.step_read_files()?;
         let mut processor: Box<dyn SubtitleProcessor<Error = ParserError>> =
             Box::new(AssProcessor::new().with_style(self.config.style.clone()));
-        let start_time = Instant::now();
         let mut current_lines = self.step_synchronize(&mut processor, &mut lines_a, &lines_b)?;
         current_lines = self.step_translate(&mut processor, &mut current_lines)?;
         current_lines = self.step_style(&mut processor, &mut current_lines)?;
         self.view.display_status(AppStatus::Writing);
         self.persistence
             .save_subtitles(&self.config.output_path, &current_lines)?;
-        Ok(start_time.elapsed().as_secs_f64())
+        Ok(())
     }
 
     pub fn run(&mut self) {
         match self.execute_workflow() {
-            Ok(elapsed) => self.view.display_success(elapsed),
+            Ok(()) => self.view.display_status(AppStatus::Success),
             Err(e) => self.view.display_error(&e.to_string()),
         }
     }

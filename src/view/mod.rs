@@ -4,8 +4,12 @@ pub enum AppStatus {
     Welcome,
     Reading,
     Processing,
+    Translating,
+    Styling,
     Writing,
     InstructionsForTranslation,
+    TranslationFileFound,
+    Success,
 }
 
 pub struct AppConfig {
@@ -20,7 +24,6 @@ pub struct AppConfig {
 pub trait View {
     fn display_status(&self, status: AppStatus);
     fn display_error(&self, message: &str);
-    fn display_success(&self, seconds: f64);
     fn get_config(&self) -> AppConfig;
     fn confirm_translation_ready(&self) -> bool;
 }
