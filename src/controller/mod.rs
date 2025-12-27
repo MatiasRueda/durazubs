@@ -23,8 +23,10 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         let persistence = SubtitlePersistence::new(repository);
         let ext = view.get_format();
         let path_a = Self::get_validated_path_a(&view, &persistence, &ext);
-        let options = view.get_options(&ext);
-        let path_b = Self::get_opt_b(&view, &persistence, &ext, options.sync_enabled);
+        let ouput_path = view.request_path_result(&ext);
+        let sync_enabled = view.get_sync_enabled();
+        let path_b = Self::get_opt_b(&view, &persistence, &ext, sync_enabled);
+        let options = view.get_options(&ouput_path, &ext, sync_enabled);
         Self {
             view,
             persistence,

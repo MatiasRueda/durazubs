@@ -48,7 +48,6 @@ impl Console {
             }
             print!("  Select choice [1-{}]: ", options.len());
             let input = self.read_input();
-            print!("\n");
             if let Ok(val) = input.parse::<usize>() {
                 if val > 0 && val <= options.len() {
                     return input;
@@ -69,7 +68,7 @@ impl View for Console {
 
     fn request_path_a(&self, ext: &str) -> String {
         loop {
-            print!("❯ Enter path for file A (Texts): ");
+            print!("\n❯ Enter path for file A (Texts): ");
             let name = self.read_input();
             if !name.is_empty() {
                 return format!("{}.{}", name, ext);
@@ -89,12 +88,12 @@ impl View for Console {
         }
     }
 
-    fn request_output_path(&self) -> String {
+    fn request_path_result(&self, ext: &str) -> String {
         loop {
             print!("❯ Enter path for result file: ");
             let name = self.read_input();
             if !name.is_empty() {
-                return format!("{}.ass", name);
+                return format!("{}.{}", name, ext);
             }
             println!("  [!] Required field. Please enter a name for the output.");
         }
@@ -108,7 +107,7 @@ impl View for Console {
                 println!("└──────────────────────────────────────────────────┘");
                 self.show_app_description();
             }
-            AppStatus::Reading => println!("[   START    ] Initializing file streams..."),
+            AppStatus::Reading => println!("\n[   START    ] Initializing file streams..."),
             AppStatus::ReadingA => {
                 println!("[    READ    ] Extracting DIALOGUE TEXTS from Source (A)...")
             }
@@ -135,25 +134,27 @@ impl View for Console {
         }
     }
 
-    fn get_options(&self, ext: &str) -> AppOptions {
-        let output_path = self.request_output_path();
+    fn get_sync_enabled(&self) -> bool {
         print!("\n❯ Enable synchronization (Merge File A text with File B timestamps)? (y/n): ");
-        let sync_enabled = self.read_input().to_lowercase() == "y";
+        self.read_input().to_lowercase() == "y"
+    }
+
+    fn get_options(&self, output_path: &str, ext: &str, sync_enabled: bool) -> AppOptions {
         let mut translation_enabled = false;
         let mut ai_type = None;
-        print!("❯ Enable translation engine? (y/n): ");
+        print!("\n❯ Enable translation engine? (y/n): ");
         if self.read_input().to_lowercase() == "y" {
             translation_enabled = true;
             ai_type =
                 Some(self.select_option("Translation Engine Type", &["Local AI", "External AI"]));
         }
         let mut style = None;
-        print!("❯ Apply custom styling? (y/n): ");
+        print!("\n❯ Apply custom styling? (y/n): ");
         if self.read_input().to_lowercase() == "y" {
             style = Some(self.select_option("Style Profile", &["Main", "Second"]));
         }
         AppOptions {
-            output_path,
+            output_path: output_path.to_string(),
             format_type: ext.to_string(),
             sync_enabled,
             style,

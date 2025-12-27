@@ -39,9 +39,10 @@ pub trait View {
     fn get_format(&self) -> String;
     fn request_path_a(&self, ext: &str) -> String;
     fn request_path_b(&self, ext: &str) -> String;
-    fn request_output_path(&self) -> String;
+    fn request_path_result(&self, ext: &str) -> String;
     fn display_status(&self, status: AppStatus);
     fn display_error(&self, message: &str);
-    fn get_options(&self, ext: &str) -> AppOptions;
+    fn get_sync_enabled(&self) -> bool;
+    fn get_options(&self, output_path: &str, ext: &str, sync_enabled: bool) -> AppOptions;
     fn confirm_translation_ready(&self) -> bool;
 }
