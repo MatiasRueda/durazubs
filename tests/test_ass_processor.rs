@@ -46,12 +46,12 @@ mod tests {
         input_a: &[
             "[Events]",
             "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
-            "Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Line 1",
+            "Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Línea 1",
         ],
         input_b: &[
             "[Events]",
             "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
-            "Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Línea 1",
+            "Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,Line 1",
         ],
         expected_fields: None,
         expected_output: &["Línea 1"],
@@ -62,15 +62,15 @@ mod tests {
         input_a: &[
             "[Events]",
             "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
-            "Comment: 0,0:00:00.00,0:00:05.00,Noise,,0,0,0,,DISCARD_ME",
-            "Dialogue: 10,0:00:01.50,0:00:03.00,OldStyle,Actor,0,0,0,,Line 1 text A",
-            "Dialogue: 10,0:00:04.00,0:00:07.00,OldStyle,Actor,0,0,0,,Line 2 text A",
+            "Dialogue: 0,0:00:00.50,0:00:02.50,OtherStyle,,0000,0000,0000,,Line 1 text B",
+            "Dialogue: 0,0:00:03.00,0:00:05.50,OtherStyle,,0000,0000,0000,,Line 2 Text B",
         ],
         input_b: &[
             "[Events]",
             "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
-            "Dialogue: 0,0:00:00.50,0:00:02.50,OtherStyle,,0000,0000,0000,,Line 1 text B",
-            "Dialogue: 0,0:00:03.00,0:00:05.50,OtherStyle,,0000,0000,0000,,Line 2 Text B",
+            "Comment: 0,0:00:00.00,0:00:05.00,Noise,,0,0,0,,DISCARD_ME",
+            "Dialogue: 10,0:00:01.50,0:00:03.00,OldStyle,Actor,0,0,0,,Line 1 text A",
+            "Dialogue: 10,0:00:04.00,0:00:07.00,OldStyle,Actor,0,0,0,,Line 2 text A",
         ],
         expected_fields: None,
         expected_output: &[

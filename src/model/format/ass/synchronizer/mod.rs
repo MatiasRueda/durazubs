@@ -32,20 +32,20 @@ impl Synchronizer {
             .segmenter
             .extract_dialogues(&lines_b.to_vec(), &self.parser);
 
-        let mut output_b_lines = Vec::new();
-        let mut processor = LineProcessor::new(&mut output_b_lines, &self.parser);
+        let mut output_a_lines = Vec::new();
+        let mut processor = LineProcessor::new(&mut output_a_lines, &self.parser);
 
         processor.run(&dialogues_a, &dialogues_b)?;
-        Ok(output_b_lines)
+        Ok(output_a_lines)
     }
 
-    fn collect(&self, lines_b: &[&String], processed_b: &[String], output: &mut Vec<String>) {
-        let header_b = self
+    fn collect(&self, lines_a: &[&String], processed_a: &[String], output: &mut Vec<String>) {
+        let header_a = self
             .segmenter
-            .extract_header(&lines_b.to_vec(), &self.parser);
+            .extract_header(&lines_a.to_vec(), &self.parser);
         let mut collector = LineCollector::new(output);
 
-        collector.collect_header_and_lines(&header_b, processed_b);
+        collector.collect_header_and_lines(&header_a, processed_a);
     }
 
     pub fn run(&mut self, source_a: &[String], source_b: &[String]) -> ParseRes<Vec<String>> {
@@ -54,8 +54,8 @@ impl Synchronizer {
         let refs_a: Vec<&String> = source_a.iter().collect();
         let refs_b: Vec<&String> = source_b.iter().collect();
 
-        let processed_b_lines = self.process_dialogues(&refs_a, &refs_b)?;
-        self.collect(&refs_b, &processed_b_lines, &mut final_output);
+        let processed_a_lines = self.process_dialogues(&refs_a, &refs_b)?;
+        self.collect(&refs_a, &processed_a_lines, &mut final_output);
 
         Ok(final_output)
     }

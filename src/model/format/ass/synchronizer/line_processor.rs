@@ -28,10 +28,10 @@ impl<'a> LineProcessor<'a> {
     fn process_line(
         &mut self,
         blocks: &mut Blocks,
-        lines_b: &Vec<&String>,
-        idx_b: usize,
+        lines_a: &Vec<&String>,
+        idx_a: usize,
     ) -> ParseRes<()> {
-        let step = Steps::new(lines_b, idx_b);
+        let step = Steps::new(lines_a, idx_a);
         if !self.try_insert_block(blocks, &step)? {
             self.add_corrected_line(step.current_line())?;
         }
@@ -142,14 +142,14 @@ impl<'a> LineProcessor<'a> {
         let line_b = &dialogues_b[Self::INITIAL_OFFSET];
         let time_a = self.parser.get_start_time(line_a)?;
         let time_b = self.parser.get_start_time(line_b)?;
-        Ok(time_a - time_b)
+        Ok(time_b - time_a)
     }
 
     pub fn run(&mut self, dialogues_a: &Vec<&String>, dialogues_b: &Vec<&String>) -> ParseRes<()> {
         self.delta = self.calculate_initial_delta(dialogues_a, dialogues_b)?;
-        let mut blocks = Blocks::new(dialogues_a, &self.parser)?;
-        for idx_b in 0..dialogues_b.len() {
-            self.process_line(&mut blocks, dialogues_b, idx_b)?;
+        let mut blocks = Blocks::new(dialogues_b, &self.parser)?;
+        for idx_a in 0..dialogues_a.len() {
+            self.process_line(&mut blocks, dialogues_a, idx_a)?;
         }
         Ok(())
     }

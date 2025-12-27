@@ -13,15 +13,15 @@ impl Console {
         println!("│                PROCESSOR WORKFLOW                │");
         println!("├──────────────────────────────────────────────────┤");
         println!("│ 1. SYNCHRONIZATION:                              │");
-        println!("│    Merges TIMESTAMPS (File A) with TEXTS         │");
+        println!("│    Merges TEXTS (File A) with TIMESTAMPS         │");
         println!("│    (File B) to create a perfectly synced file.   │");
         println!("│                                                  │");
-        println!("│ 2. TRANSLATION ENGINE (Optional):                │");
+        println!("│ 2. TRANSLATION ENGINE:                           │");
         println!("│    Ideal for Blu-Ray extended scenes. AI will    │");
         println!("│    translate lines that exist in 'A' but are     │");
         println!("│    missing in 'B' (Local or External AI).        │");
         println!("│                                                  │");
-        println!("│ 3. STYLE PROFILES (Optional):                    │");
+        println!("│ 3. STYLE PROFILES:                               │");
         println!("│    Apply custom visual formats, fonts, and       │");
         println!("│    styles to the final output subtitles.         │");
         println!("│                                                  │");
@@ -69,7 +69,7 @@ impl View for Console {
 
     fn request_path_a(&self, ext: &str) -> String {
         loop {
-            print!("❯ Enter path for file A (Timestamps): ");
+            print!("❯ Enter path for file A (Texts): ");
             let name = self.read_input();
             if !name.is_empty() {
                 return format!("{}.{}", name, ext);
@@ -80,7 +80,7 @@ impl View for Console {
 
     fn request_path_b(&self, ext: &str) -> String {
         loop {
-            print!("❯ Enter path for file B (Texts): ");
+            print!("❯ Enter path for file B (Timestamps): ");
             let name = self.read_input();
             if !name.is_empty() {
                 return format!("{}.{}", name, ext);
@@ -110,13 +110,13 @@ impl View for Console {
             }
             AppStatus::Reading => println!("[   START    ] Initializing file streams..."),
             AppStatus::ReadingA => {
-                println!("[    READ    ] Extracting TIMESTAMPS from Source (A)...")
+                println!("[    READ    ] Extracting DIALOGUE TEXTS from Source (A)...")
             }
             AppStatus::ReadingB => {
-                println!("[    READ    ] Extracting DIALOGUE TEXTS from Source (B)...")
+                println!("[    READ    ] Extracting TIMESTAMPS from Source (B)...")
             }
             AppStatus::Preprocessing => {
-                println!("[    CLEAN   ] Sorting and normalizing Source (A) timestamps...")
+                println!("[    CLEAN   ] Sorting and normalizing Source (B) timestamps...")
             }
             AppStatus::Processing => println!("[    WORK    ] Synchronizing subtitle layers..."),
             AppStatus::Translating => println!("[ TRANSLATE  ] Running translation engine..."),
@@ -137,9 +137,11 @@ impl View for Console {
 
     fn get_options(&self, ext: &str) -> AppOptions {
         let output_path = self.request_output_path();
+        print!("\n❯ Enable synchronization (Merge File A text with File B timestamps)? (y/n): ");
+        let sync_enabled = self.read_input().to_lowercase() == "y";
         let mut translation_enabled = false;
         let mut ai_type = None;
-        print!("\n❯ Enable translation engine? (y/n): ");
+        print!("❯ Enable translation engine? (y/n): ");
         if self.read_input().to_lowercase() == "y" {
             translation_enabled = true;
             ai_type =
@@ -153,6 +155,7 @@ impl View for Console {
         AppOptions {
             output_path,
             format_type: ext.to_string(),
+            sync_enabled,
             style,
             translation_enabled,
             ai_type,

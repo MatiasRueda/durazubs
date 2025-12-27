@@ -23,8 +23,8 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         let persistence = SubtitlePersistence::new(repository);
         let ext = view.get_format();
         let path_a = Self::get_validated_path_a(&view, &persistence, &ext);
-        let path_b = Self::get_validated_path_b(&view, &persistence, &ext);
         let options = view.get_options(&ext);
+        let path_b = Self::get_opt_b(&view, &persistence, &ext, options.sync_enabled);
         Self {
             view,
             persistence,
@@ -42,6 +42,13 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
                 Ok(_) => return path,
                 Err(e) => view.display_error(&e.to_string()),
             }
+        }
+    }
+
+    fn get_opt_b(v: &V, p: &SubtitlePersistence<R>, ext: &str, enable_syn: bool) -> Option<String> {
+        match enable_syn {
+            true => Some(Self::get_validated_path_b(v, p, ext)),
+            false => None,
         }
     }
 
@@ -89,25 +96,33 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         Ok(self.persistence.load_subs(&self.config.paths.path_a)?)
     }
 
-    fn step_read_b(&self) -> AssRes<Vec<String>> {
-        self.view.display_status(AppStatus::ReadingB);
-        Ok(self.persistence.load_subs(&self.config.paths.path_b)?)
-    }
-
     fn step_preprocessing(&self, p: &mut Processor, lines: &mut Vec<String>) -> AssRes<()> {
         self.view.display_status(AppStatus::Preprocessing);
         *lines = p.preprocessing(lines)?;
         Ok(())
     }
 
-    fn step_synchronize(
-        &self,
-        processor: &mut Processor,
-        l_a: &[String],
-        l_b: &[String],
-    ) -> AssRes<Vec<String>> {
+    fn step_synchronize(&self, p: &mut Processor, lines_a: &mut Vec<String>) -> AssRes<()> {
+        match self.config.options.sync_enabled {
+            true => self.sync_flow(p, lines_a),
+            false => Ok(()),
+        }
+    }
+
+    fn sync_flow(&self, p: &mut Processor, lines_a: &mut Vec<String>) -> AssRes<()> {
+        let path_b = self.config.paths.path_b.as_ref().unwrap();
+        self.view.display_status(AppStatus::ReadingB);
+
+        let mut lines_b = self.persistence.load_subs(path_b)?;
+        self.sync(p, lines_a, &mut lines_b)?;
+        Ok(())
+    }
+
+    fn sync(&self, p: &mut Processor, l_a: &mut Vec<String>, l_b: &mut Vec<String>) -> AssRes<()> {
+        self.step_preprocessing(p, l_b)?;
         self.view.display_status(AppStatus::Processing);
-        Ok(processor.synchronize(l_a, l_b)?)
+        *l_a = p.synchronize(l_a, l_b)?;
+        Ok(())
     }
 
     fn step_translate(&self, p: &mut Processor, lines: &mut Vec<String>) -> AssRes<()> {
@@ -156,15 +171,13 @@ impl<V: View, R: SubtitleRepository> App<V, R> {
         let output_path = &self.config.options.output_path;
         self.view.display_status(AppStatus::Reading);
         let mut lines_a = self.step_read_a()?;
-        let lines_b = self.step_read_b()?;
         let style_name = self.config.options.style.clone();
         let mut processor: Processor = Box::new(AssProcessor::new().with_style(style_name));
-        self.step_preprocessing(&mut processor, &mut lines_a)?;
-        let mut current_lines = self.step_synchronize(&mut processor, &lines_a, &lines_b)?;
-        self.step_translate(&mut processor, &mut current_lines)?;
-        self.step_style(&mut processor, &mut current_lines)?;
+        self.step_synchronize(&mut processor, &mut lines_a)?;
+        self.step_translate(&mut processor, &mut lines_a)?;
+        self.step_style(&mut processor, &mut lines_a)?;
         self.view.display_status(AppStatus::Writing);
-        self.persistence.save_subs(output_path, &current_lines)?;
+        self.persistence.save_subs(output_path, &lines_a)?;
         Ok(())
     }
 

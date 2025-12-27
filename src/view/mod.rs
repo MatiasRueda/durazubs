@@ -18,12 +18,13 @@ pub enum AppStatus {
 
 pub struct AppPaths {
     pub path_a: String,
-    pub path_b: String,
+    pub path_b: Option<String>,
 }
 
 pub struct AppOptions {
     pub output_path: String,
     pub format_type: String,
+    pub sync_enabled: bool,
     pub style: Option<String>,
     pub translation_enabled: bool,
     pub ai_type: Option<String>,
